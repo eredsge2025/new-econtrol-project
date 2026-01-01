@@ -1,0 +1,5 @@
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\obj\Debug\net9.0\eControl.Agent.Master.csproj.AssemblyReference.cache
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\obj\Debug\net9.0\eControl.Agent.Master.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\obj\Debug\net9.0\eControl.Agent.Master.AssemblyInfoInputs.cache
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\obj\Debug\net9.0\eControl.Agent.Master.AssemblyInfo.cs
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\obj\Debug\net9.0\eControl.Agent.Master.csproj.CoreCompileInputs.cache

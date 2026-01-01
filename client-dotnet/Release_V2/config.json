@@ -1,0 +1,7 @@
+﻿{
+    "lanId":  "724f11c3-b44c-46a1-80fb-8ba0ce6ceeec",
+    "heartbeatIntervalSeconds":  10,
+    "serverUrl":  "http://192.168.1.121:3001",
+    "apiKey":  "8fc837e8-77a4-49e7-8274-f10bdfa0f78b",
+    "uiPath":  "agent-ui.exe"
+}

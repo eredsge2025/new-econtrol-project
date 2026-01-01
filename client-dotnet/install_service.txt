@@ -1,0 +1,305 @@
+[INFO] Stopping existing service (if any)...
+[INFO] Deleting existing service (if any)...
+
+[INFO] Installing Service: eControlMaestro
+[PATH] C:\eControl\agent-master.exe
+Ya existe el subdirectorio o el archivo C:\eControl.
+C:\eControl\agent-master.deps.json
+No se puede copiar el archivo sobre sí mismo.
+        0 archivo(s) copiado(s).
+Granting permissions...
+archivo procesado: C:\eControl
+archivo procesado: C:\eControl\agent-master.deps.json
+archivo procesado: C:\eControl\agent-master.dll
+archivo procesado: C:\eControl\agent-master.exe
+archivo procesado: C:\eControl\agent-master.pdb
+archivo procesado: C:\eControl\agent-master.runtimeconfig.json
+archivo procesado: C:\eControl\agent-ui.deps.json
+archivo procesado: C:\eControl\agent-ui.dll
+archivo procesado: C:\eControl\agent-ui.exe
+archivo procesado: C:\eControl\agent-ui.pdb
+archivo procesado: C:\eControl\agent-ui.runtimeconfig.json
+archivo procesado: C:\eControl\appsettings.Development.json
+archivo procesado: C:\eControl\appsettings.json
+archivo procesado: C:\eControl\Avalonia.Base.dll
+archivo procesado: C:\eControl\Avalonia.Controls.dll
+archivo procesado: C:\eControl\Avalonia.DesignerSupport.dll
+archivo procesado: C:\eControl\Avalonia.Desktop.dll
+archivo procesado: C:\eControl\Avalonia.Dialogs.dll
+archivo procesado: C:\eControl\Avalonia.dll
+archivo procesado: C:\eControl\Avalonia.Fonts.Inter.dll
+archivo procesado: C:\eControl\Avalonia.FreeDesktop.dll
+archivo procesado: C:\eControl\Avalonia.Markup.dll
+archivo procesado: C:\eControl\Avalonia.Markup.Xaml.dll
+archivo procesado: C:\eControl\Avalonia.Metal.dll
+archivo procesado: C:\eControl\Avalonia.MicroCom.dll
+archivo procesado: C:\eControl\Avalonia.Native.dll
+archivo procesado: C:\eControl\Avalonia.OpenGL.dll
+archivo procesado: C:\eControl\Avalonia.Remote.Protocol.dll
+archivo procesado: C:\eControl\Avalonia.Skia.dll
+archivo procesado: C:\eControl\Avalonia.Themes.Fluent.dll
+archivo procesado: C:\eControl\Avalonia.Vulkan.dll
+archivo procesado: C:\eControl\Avalonia.Win32.Automation.dll
+archivo procesado: C:\eControl\Avalonia.Win32.dll
+archivo procesado: C:\eControl\Avalonia.X11.dll
+archivo procesado: C:\eControl\av_libglesv2.dll
+archivo procesado: C:\eControl\clretwrc.dll
+archivo procesado: C:\eControl\clrgc.dll
+archivo procesado: C:\eControl\clrgcexp.dll
+archivo procesado: C:\eControl\clrjit.dll
+archivo procesado: C:\eControl\CommunityToolkit.Mvvm.dll
+archivo procesado: C:\eControl\config.json
+archivo procesado: C:\eControl\coreclr.dll
+archivo procesado: C:\eControl\createdump.exe
+archivo procesado: C:\eControl\eControl.Agent.Shared.dll
+archivo procesado: C:\eControl\eControl.Agent.Shared.pdb
+archivo procesado: C:\eControl\FluentIcons.Avalonia.dll
+archivo procesado: C:\eControl\FluentIcons.Common.dll
+archivo procesado: C:\eControl\FluentIcons.Resources.Avalonia.dll
+archivo procesado: C:\eControl\HarfBuzzSharp.dll
+archivo procesado: C:\eControl\hostfxr.dll
+archivo procesado: C:\eControl\hostpolicy.dll
+archivo procesado: C:\eControl\install_service.bat
+archivo procesado: C:\eControl\libHarfBuzzSharp.dll
+archivo procesado: C:\eControl\libSkiaSharp.dll
+archivo procesado: C:\eControl\MicroCom.Runtime.dll
+archivo procesado: C:\eControl\Microsoft.CSharp.dll
+archivo procesado: C:\eControl\Microsoft.DiaSymReader.Native.amd64.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.Abstractions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.Binder.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.CommandLine.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.FileExtensions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.Json.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Configuration.UserSecrets.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.DependencyInjection.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Diagnostics.Abstractions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Diagnostics.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.FileProviders.Abstractions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.FileProviders.Physical.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.FileSystemGlobbing.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Hosting.Abstractions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Hosting.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Hosting.WindowsServices.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Http.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Logging.Abstractions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Logging.Configuration.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Logging.Console.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Logging.Debug.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Logging.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Logging.EventLog.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Logging.EventSource.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Options.ConfigurationExtensions.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Options.dll
+archivo procesado: C:\eControl\Microsoft.Extensions.Primitives.dll
+archivo procesado: C:\eControl\Microsoft.VisualBasic.Core.dll
+archivo procesado: C:\eControl\Microsoft.VisualBasic.dll
+archivo procesado: C:\eControl\Microsoft.Win32.Primitives.dll
+archivo procesado: C:\eControl\Microsoft.Win32.Registry.dll
+archivo procesado: C:\eControl\Microsoft.Win32.SystemEvents.dll
+archivo procesado: C:\eControl\mscordaccore.dll
+archivo procesado: C:\eControl\mscordaccore_amd64_amd64_9.0.1025.47515.dll
+archivo procesado: C:\eControl\mscordbi.dll
+archivo procesado: C:\eControl\mscorlib.dll
+archivo procesado: C:\eControl\mscorrc.dll
+archivo procesado: C:\eControl\msquic.dll
+archivo procesado: C:\eControl\netstandard.dll
+archivo procesado: C:\eControl\Newtonsoft.Json.dll
+archivo procesado: C:\eControl\Polly.Core.dll
+archivo procesado: C:\eControl\Polly.dll
+archivo procesado: C:\eControl\SkiaSharp.dll
+archivo procesado: C:\eControl\System.AppContext.dll
+archivo procesado: C:\eControl\System.Buffers.dll
+archivo procesado: C:\eControl\System.Collections.Concurrent.dll
+archivo procesado: C:\eControl\System.Collections.dll
+archivo procesado: C:\eControl\System.Collections.Immutable.dll
+archivo procesado: C:\eControl\System.Collections.NonGeneric.dll
+archivo procesado: C:\eControl\System.Collections.Specialized.dll
+archivo procesado: C:\eControl\System.ComponentModel.Annotations.dll
+archivo procesado: C:\eControl\System.ComponentModel.DataAnnotations.dll
+archivo procesado: C:\eControl\System.ComponentModel.dll
+archivo procesado: C:\eControl\System.ComponentModel.EventBasedAsync.dll
+archivo procesado: C:\eControl\System.ComponentModel.Primitives.dll
+archivo procesado: C:\eControl\System.ComponentModel.TypeConverter.dll
+archivo procesado: C:\eControl\System.Configuration.dll
+archivo procesado: C:\eControl\System.Console.dll
+archivo procesado: C:\eControl\System.Core.dll
+archivo procesado: C:\eControl\System.Data.Common.dll
+archivo procesado: C:\eControl\System.Data.DataSetExtensions.dll
+archivo procesado: C:\eControl\System.Data.dll
+archivo procesado: C:\eControl\System.Diagnostics.Contracts.dll
+archivo procesado: C:\eControl\System.Diagnostics.Debug.dll
+archivo procesado: C:\eControl\System.Diagnostics.DiagnosticSource.dll
+archivo procesado: C:\eControl\System.Diagnostics.EventLog.dll
+archivo procesado: C:\eControl\System.Diagnostics.EventLog.Messages.dll
+archivo procesado: C:\eControl\System.Diagnostics.FileVersionInfo.dll
+archivo procesado: C:\eControl\System.Diagnostics.Process.dll
+archivo procesado: C:\eControl\System.Diagnostics.StackTrace.dll
+archivo procesado: C:\eControl\System.Diagnostics.TextWriterTraceListener.dll
+archivo procesado: C:\eControl\System.Diagnostics.Tools.dll
+archivo procesado: C:\eControl\System.Diagnostics.TraceSource.dll
+archivo procesado: C:\eControl\System.Diagnostics.Tracing.dll
+archivo procesado: C:\eControl\System.dll
+archivo procesado: C:\eControl\System.Drawing.dll
+archivo procesado: C:\eControl\System.Drawing.Primitives.dll
+archivo procesado: C:\eControl\System.Dynamic.Runtime.dll
+archivo procesado: C:\eControl\System.Formats.Asn1.dll
+archivo procesado: C:\eControl\System.Formats.Tar.dll
+archivo procesado: C:\eControl\System.Globalization.Calendars.dll
+archivo procesado: C:\eControl\System.Globalization.dll
+archivo procesado: C:\eControl\System.Globalization.Extensions.dll
+archivo procesado: C:\eControl\System.IO.Compression.Brotli.dll
+archivo procesado: C:\eControl\System.IO.Compression.dll
+archivo procesado: C:\eControl\System.IO.Compression.FileSystem.dll
+archivo procesado: C:\eControl\System.IO.Compression.Native.dll
+archivo procesado: C:\eControl\System.IO.Compression.ZipFile.dll
+archivo procesado: C:\eControl\System.IO.dll
+archivo procesado: C:\eControl\System.IO.FileSystem.AccessControl.dll
+archivo procesado: C:\eControl\System.IO.FileSystem.dll
+archivo procesado: C:\eControl\System.IO.FileSystem.DriveInfo.dll
+archivo procesado: C:\eControl\System.IO.FileSystem.Primitives.dll
+archivo procesado: C:\eControl\System.IO.FileSystem.Watcher.dll
+archivo procesado: C:\eControl\System.IO.IsolatedStorage.dll
+archivo procesado: C:\eControl\System.IO.MemoryMappedFiles.dll
+archivo procesado: C:\eControl\System.IO.Pipelines.dll
+archivo procesado: C:\eControl\System.IO.Pipes.AccessControl.dll
+archivo procesado: C:\eControl\System.IO.Pipes.dll
+archivo procesado: C:\eControl\System.IO.UnmanagedMemoryStream.dll
+archivo procesado: C:\eControl\System.Linq.dll
+archivo procesado: C:\eControl\System.Linq.Expressions.dll
+archivo procesado: C:\eControl\System.Linq.Parallel.dll
+archivo procesado: C:\eControl\System.Linq.Queryable.dll
+archivo procesado: C:\eControl\System.Memory.dll
+archivo procesado: C:\eControl\System.Net.dll
+archivo procesado: C:\eControl\System.Net.Http.dll
+archivo procesado: C:\eControl\System.Net.Http.Json.dll
+archivo procesado: C:\eControl\System.Net.HttpListener.dll
+archivo procesado: C:\eControl\System.Net.Mail.dll
+archivo procesado: C:\eControl\System.Net.NameResolution.dll
+archivo procesado: C:\eControl\System.Net.NetworkInformation.dll
+archivo procesado: C:\eControl\System.Net.Ping.dll
+archivo procesado: C:\eControl\System.Net.Primitives.dll
+archivo procesado: C:\eControl\System.Net.Quic.dll
+archivo procesado: C:\eControl\System.Net.Requests.dll
+archivo procesado: C:\eControl\System.Net.Security.dll
+archivo procesado: C:\eControl\System.Net.ServicePoint.dll
+archivo procesado: C:\eControl\System.Net.Sockets.dll
+archivo procesado: C:\eControl\System.Net.WebClient.dll
+archivo procesado: C:\eControl\System.Net.WebHeaderCollection.dll
+archivo procesado: C:\eControl\System.Net.WebProxy.dll
+archivo procesado: C:\eControl\System.Net.WebSockets.Client.dll
+archivo procesado: C:\eControl\System.Net.WebSockets.dll
+archivo procesado: C:\eControl\System.Numerics.dll
+archivo procesado: C:\eControl\System.Numerics.Vectors.dll
+archivo procesado: C:\eControl\System.ObjectModel.dll
+archivo procesado: C:\eControl\System.Private.CoreLib.dll
+archivo procesado: C:\eControl\System.Private.DataContractSerialization.dll
+archivo procesado: C:\eControl\System.Private.Uri.dll
+archivo procesado: C:\eControl\System.Private.Xml.dll
+archivo procesado: C:\eControl\System.Private.Xml.Linq.dll
+archivo procesado: C:\eControl\System.Reflection.DispatchProxy.dll
+archivo procesado: C:\eControl\System.Reflection.dll
+archivo procesado: C:\eControl\System.Reflection.Emit.dll
+archivo procesado: C:\eControl\System.Reflection.Emit.ILGeneration.dll
+archivo procesado: C:\eControl\System.Reflection.Emit.Lightweight.dll
+archivo procesado: C:\eControl\System.Reflection.Extensions.dll
+archivo procesado: C:\eControl\System.Reflection.Metadata.dll
+archivo procesado: C:\eControl\System.Reflection.Primitives.dll
+archivo procesado: C:\eControl\System.Reflection.TypeExtensions.dll
+archivo procesado: C:\eControl\System.Resources.Reader.dll
+archivo procesado: C:\eControl\System.Resources.ResourceManager.dll
+archivo procesado: C:\eControl\System.Resources.Writer.dll
+archivo procesado: C:\eControl\System.Runtime.CompilerServices.Unsafe.dll
+archivo procesado: C:\eControl\System.Runtime.CompilerServices.VisualC.dll
+archivo procesado: C:\eControl\System.Runtime.dll
+archivo procesado: C:\eControl\System.Runtime.Extensions.dll
+archivo procesado: C:\eControl\System.Runtime.Handles.dll
+archivo procesado: C:\eControl\System.Runtime.InteropServices.dll
+archivo procesado: C:\eControl\System.Runtime.InteropServices.JavaScript.dll
+archivo procesado: C:\eControl\System.Runtime.InteropServices.RuntimeInformation.dll
+archivo procesado: C:\eControl\System.Runtime.Intrinsics.dll
+archivo procesado: C:\eControl\System.Runtime.Loader.dll
+archivo procesado: C:\eControl\System.Runtime.Numerics.dll
+archivo procesado: C:\eControl\System.Runtime.Serialization.dll
+archivo procesado: C:\eControl\System.Runtime.Serialization.Formatters.dll
+archivo procesado: C:\eControl\System.Runtime.Serialization.Json.dll
+archivo procesado: C:\eControl\System.Runtime.Serialization.Primitives.dll
+archivo procesado: C:\eControl\System.Runtime.Serialization.Xml.dll
+archivo procesado: C:\eControl\System.Security.AccessControl.dll
+archivo procesado: C:\eControl\System.Security.Claims.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.Algorithms.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.Cng.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.Csp.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.Encoding.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.OpenSsl.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.Primitives.dll
+archivo procesado: C:\eControl\System.Security.Cryptography.X509Certificates.dll
+archivo procesado: C:\eControl\System.Security.dll
+archivo procesado: C:\eControl\System.Security.Principal.dll
+archivo procesado: C:\eControl\System.Security.Principal.Windows.dll
+archivo procesado: C:\eControl\System.Security.SecureString.dll
+archivo procesado: C:\eControl\System.ServiceModel.Web.dll
+archivo procesado: C:\eControl\System.ServiceProcess.dll
+archivo procesado: C:\eControl\System.ServiceProcess.ServiceController.dll
+archivo procesado: C:\eControl\System.Text.Encoding.CodePages.dll
+archivo procesado: C:\eControl\System.Text.Encoding.dll
+archivo procesado: C:\eControl\System.Text.Encoding.Extensions.dll
+archivo procesado: C:\eControl\System.Text.Encodings.Web.dll
+archivo procesado: C:\eControl\System.Text.Json.dll
+archivo procesado: C:\eControl\System.Text.RegularExpressions.dll
+archivo procesado: C:\eControl\System.Threading.Channels.dll
+archivo procesado: C:\eControl\System.Threading.dll
+archivo procesado: C:\eControl\System.Threading.Overlapped.dll
+archivo procesado: C:\eControl\System.Threading.Tasks.Dataflow.dll
+archivo procesado: C:\eControl\System.Threading.Tasks.dll
+archivo procesado: C:\eControl\System.Threading.Tasks.Extensions.dll
+archivo procesado: C:\eControl\System.Threading.Tasks.Parallel.dll
+archivo procesado: C:\eControl\System.Threading.Thread.dll
+archivo procesado: C:\eControl\System.Threading.ThreadPool.dll
+archivo procesado: C:\eControl\System.Threading.Timer.dll
+archivo procesado: C:\eControl\System.Transactions.dll
+archivo procesado: C:\eControl\System.Transactions.Local.dll
+archivo procesado: C:\eControl\System.ValueTuple.dll
+archivo procesado: C:\eControl\System.Web.dll
+archivo procesado: C:\eControl\System.Web.HttpUtility.dll
+archivo procesado: C:\eControl\System.Windows.dll
+archivo procesado: C:\eControl\System.Xml.dll
+archivo procesado: C:\eControl\System.Xml.Linq.dll
+archivo procesado: C:\eControl\System.Xml.ReaderWriter.dll
+archivo procesado: C:\eControl\System.Xml.Serialization.dll
+archivo procesado: C:\eControl\System.Xml.XDocument.dll
+archivo procesado: C:\eControl\System.Xml.XmlDocument.dll
+archivo procesado: C:\eControl\System.Xml.XmlSerializer.dll
+archivo procesado: C:\eControl\System.Xml.XPath.dll
+archivo procesado: C:\eControl\System.Xml.XPath.XDocument.dll
+archivo procesado: C:\eControl\Tmds.DBus.Protocol.dll
+archivo procesado: C:\eControl\uninstall_clean.bat
+archivo procesado: C:\eControl\WindowsBase.dll
+Se procesaron correctamente 270 archivos; error al procesar 0 archivos
+Ya existe el subdirectorio o el archivo C:\Users\Public\eControlLogs.
+archivo procesado: C:\Users\Public\eControlLogs
+archivo procesado: C:\Users\Public\eControlLogs\master_debug.log
+Se procesaron correctamente 2 archivos; error al procesar 0 archivos
+[SC] CreateService CORRECTO
+
+[INFO] Configuring Recovery Actions (Restart on Failure)...
+[SC] ChangeServiceConfig2 CORRECTO
+
+[INFO] Starting Service...
+
+NOMBRE_SERVICIO: eControlMaestro
+        TIPO               : 10  WIN32_OWN_PROCESS
+        ESTADO             : 2  START_PENDING
+                                (NOT_STOPPABLE, NOT_PAUSABLE, IGNORES_SHUTDOWN)
+        CÓD_SALIDA_WIN32   : 0  (0x0)
+        CÓD_SALIDA_SERVICIO: 0  (0x0)
+        PUNTO_COMPROB.     : 0x0
+        INDICACIÓN_INICIO  : 0x7d0
+        PID                : 2964
+        MARCAS         :
+
+[SUCCESS] eControl Maestro installed and started!
+Presione una tecla para continuar . . .

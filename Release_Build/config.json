@@ -1,0 +1,7 @@
+{
+    "lanId": "e3609ca8-44b3-4ffe-9be4-f6db77e9fe71",
+    "apiKey": "b088ef1b-47e5-412e-8d2d-4f99f7561107",
+    "serverUrl": "http://localhost:3001",
+    "heartbeatInterval": 5,
+    "uiPath": "../agent-ui/src-tauri/target/release/app.exe"
+}

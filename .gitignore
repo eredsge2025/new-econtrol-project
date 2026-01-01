@@ -1,0 +1,33 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Backend
+backend/.env
+backend/dist/
+backend/node_modules/
+
+# Agent Rust
+agent-service/target/
+agent-service/Cargo.lock
+
+# Agent UI (Tauri)
+agent-ui/node_modules/
+agent-ui/src-tauri/target/
+agent-ui/dist/
+
+# Dashboard
+dashboard/.next/
+dashboard/node_modules/
+dashboard/out/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

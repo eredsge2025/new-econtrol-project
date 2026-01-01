@@ -1,0 +1,243 @@
+<Window xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:eControl.Agent.UI.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignWidth="1920" d:DesignHeight="1080"
+    x:Class="eControl.Agent.UI.Views.MainWindow"
+    x:DataType="vm:MainWindowViewModel"
+    Icon="/Assets/avalonia-logo.ico"
+    Title="eControl Kiosk"
+    WindowState="{Binding WindowState}"
+    Height="{Binding WindowHeight}"
+    Width="{Binding WindowWidth}"
+    VerticalAlignment="{Binding VerticalAlignment}"
+    SystemDecorations="None"
+    Topmost="True"
+    ShowInTaskbar="False"
+    CanResize="False"
+    Background="{Binding Background}"
+    TransparencyLevelHint="Transparent, Mica, AcrylicBlur">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <Panel>
+        <!-- Background Layer (Only visible when locked or dashboard) -->
+        <Border Background="#1A1A1A" Opacity="0.95" IsVisible="{Binding !IsSessionActive}" />
+
+        <!-- Animated / Decorative Gradient (Fixed) -->
+        <Border Opacity="0.3" IsVisible="{Binding !IsSessionActive}">
+            <Border.Background>
+                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" RadiusX="100%"
+                    RadiusY="100%">
+                    <GradientStop Offset="0" Color="#4338CA" />
+                    <GradientStop Offset="1" Color="Transparent" />
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Login Card -->
+        <Grid IsVisible="{Binding !IsLoggedIn}">
+            <!-- (Existing Login UI) -->
+            <Border Width="450" Height="550"
+                Background="#252525"
+                CornerRadius="24"
+                BoxShadow="0 20 50 0 #000000"
+                VerticalAlignment="Center" HorizontalAlignment="Center">
+
+                <StackPanel Margin="40" Spacing="25" VerticalAlignment="Center">
+                    <StackPanel Spacing="5" HorizontalAlignment="Center">
+                        <TextBlock Text="eControl" FontSize="42" FontWeight="Black"
+                            Foreground="White" HorizontalAlignment="Center" />
+                        <TextBlock Text="KIOSK EDITION" FontSize="14" FontWeight="Bold"
+                            Foreground="#6366F1" LetterSpacing="3" HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding PcName}" FontSize="12" FontWeight="SemiBold"
+                            Foreground="#4B5563" HorizontalAlignment="Center" Margin="0,5,0,0" />
+                    </StackPanel>
+
+                    <Separator Height="1" Background="#333333" Margin="0,10" />
+
+                    <StackPanel Spacing="15">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="USUARIO" FontSize="11" FontWeight="Bold"
+                                Foreground="#9CA3AF" Margin="5,0" />
+                            <TextBox Text="{Binding Username}"
+                                Watermark="Ingrese su email o ID"
+                                Height="50" CornerRadius="12"
+                                Background="#1A1A1A" BorderThickness="1" BorderBrush="#333333"
+                                Padding="15,12" VerticalContentAlignment="Center"
+                                Foreground="White" CaretBrush="White" SelectionBrush="#6366F1">
+                                <TextBox.Styles>
+                                    <Style
+                                        Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                                        <Setter Property="Background" Value="#1A1A1A" />
+                                        <Setter Property="BorderBrush" Value="#6366F1" />
+                                    </Style>
+                                    <Style
+                                        Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+                                        <Setter Property="Background" Value="#1A1A1A" />
+                                        <Setter Property="BorderBrush" Value="#4B5563" />
+                                    </Style>
+                                </TextBox.Styles>
+                            </TextBox>
+                        </StackPanel>
+
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="CONTRASEÑA" FontSize="11" FontWeight="Bold"
+                                Foreground="#9CA3AF" Margin="5,0" />
+                            <TextBox Text="{Binding Password}"
+                                PasswordChar="*"
+                                Watermark="••••••••"
+                                Height="50" CornerRadius="12"
+                                Background="#1A1A1A" BorderThickness="1" BorderBrush="#333333"
+                                Padding="15,12" VerticalContentAlignment="Center"
+                                Foreground="White" CaretBrush="White" SelectionBrush="#6366F1">
+                                <TextBox.Styles>
+                                    <Style
+                                        Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                                        <Setter Property="Background" Value="#1A1A1A" />
+                                        <Setter Property="BorderBrush" Value="#6366F1" />
+                                    </Style>
+                                    <Style
+                                        Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+                                        <Setter Property="Background" Value="#1A1A1A" />
+                                        <Setter Property="BorderBrush" Value="#4B5563" />
+                                    </Style>
+                                </TextBox.Styles>
+                            </TextBox>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding ErrorMessage}"
+                        Foreground="#EF4444"
+                        FontSize="13"
+                        FontWeight="Medium"
+                        HorizontalAlignment="Center"
+                        TextWrapping="Wrap"
+                        TextAlignment="Center"
+                        IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                    <Button Command="{Binding LoginCommand}"
+                        HorizontalAlignment="Stretch" Height="55"
+                        Background="#6366F1" Foreground="White"
+                        CornerRadius="14" BorderThickness="0">
+                        <Panel>
+                            <TextBlock Text="INICIAR SESIÓN" FontWeight="Bold" FontSize="16"
+                                IsVisible="{Binding !IsBusy}"
+                                VerticalAlignment="Center" HorizontalAlignment="Center" />
+                            <ProgressBar IsIndeterminate="True" Width="24" Height="24"
+                                IsVisible="{Binding IsBusy}"
+                                Background="Transparent" Foreground="White" />
+                        </Panel>
+                    </Button>
+
+                    <TextBlock Text="© 2025 antigravity labs" FontSize="10" Foreground="#4B5563"
+                        HorizontalAlignment="Center" Margin="0,20,0,0" />
+
+                    <Button Command="{Binding EmergencyResetCommand}"
+                        HorizontalAlignment="Center" Margin="0,10,0,0"
+                        Background="Transparent" BorderThickness="0">
+                        <TextBlock Text="⚠️ RESETEAR SISTEMA (EMERGENCIA)"
+                            Foreground="#EF4444" Opacity="0.5" FontSize="9" />
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- User Dashboard (Authenticated but Locked) -->
+        <!-- Visible ONLY when IsDashboardVisible is TRUE -->
+        <Grid IsVisible="{Binding IsDashboardVisible}">
+            <Border Width="900" Height="600"
+                Background="#1E1E1E"
+                CornerRadius="30"
+                BoxShadow="0 30 100 0 #000000"
+                VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Grid RowDefinitions="Auto,*,Auto" Margin="50">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Bienvenido," FontSize="24" Foreground="#9CA3AF" />
+                        <TextBlock Text="{Binding DisplayName}" FontSize="48" FontWeight="Black"
+                            Foreground="White" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="0,40">
+                        <!-- Info Card -->
+                        <StackPanel Spacing="20" VerticalAlignment="Center">
+                            <Border Background="#252525" CornerRadius="16" Padding="20">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="SALDO DISPONIBLE" FontSize="12"
+                                        FontWeight="Bold" Foreground="#6B7280" />
+                                    <TextBlock Text="$5.00" FontSize="36" FontWeight="Bold"
+                                        Foreground="#10B981" />
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#252525" CornerRadius="16" Padding="20">
+                                <StackPanel Spacing="5">
+                                    <TextBlock Text="TIEMPO DISPONIBLE" FontSize="12"
+                                        FontWeight="Bold" Foreground="#6B7280" />
+                                    <TextBlock Text="1h 30m" FontSize="36" FontWeight="Bold"
+                                        Foreground="#6366F1" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Actions -->
+                        <StackPanel Grid.Column="1" Spacing="15" Margin="40,0,0,0"
+                            VerticalAlignment="Center">
+                            <Button Command="{Binding StartSessionCommand}"
+                                HorizontalAlignment="Stretch" Height="70"
+                                Background="#6366F1" Foreground="White"
+                                CornerRadius="16" FontSize="18" FontWeight="Bold"
+                                Content="¡JUGAR AHORA!" HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center" />
+
+                            <Button
+                                HorizontalAlignment="Stretch" Height="50"
+                                Background="#374151" Foreground="White"
+                                CornerRadius="12" FontSize="14" FontWeight="SemiBold"
+                                Content="Comprar Recarga" HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Command="{Binding LogoutCommand}" Grid.Row="2"
+                        HorizontalAlignment="Center"
+                        Background="Transparent" Foreground="#EF4444"
+                        Content="Cerrar Sesión" FontSize="14" FontWeight="Medium" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Floating Pill Toolbar (Session Active) -->
+        <!-- Visible ONLY when IsPillVisible is TRUE -->
+        <Grid IsVisible="{Binding IsPillVisible}" HorizontalAlignment="Center"
+            VerticalAlignment="Top" Margin="0,15,0,0">
+            <Border Background="#1F2937" CornerRadius="100" Padding="20,10"
+                BoxShadow="0 4 15 0 #80000000">
+                <StackPanel Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="15" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding DisplayName}" Foreground="#9CA3AF"
+                            FontWeight="SemiBold"
+                            FontSize="14" VerticalAlignment="Center" MaxWidth="120"
+                            TextTrimming="CharacterEllipsis" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="#10B981" />
+                            <TextBlock Text="{Binding RemainingTime}" Foreground="White"
+                                FontWeight="Bold"
+                                FontFamily="Courier New" FontSize="16" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Rectangle Width="1" Height="20" Fill="#374151" />
+
+                    <Button Command="{Binding LogoutCommand}"
+                        Background="#EF4444" Foreground="White"
+                        CornerRadius="20" Padding="15,5" FontSize="12" FontWeight="Bold"
+                        Content="TERMINAR" BorderThickness="0" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Panel>
+</Window>

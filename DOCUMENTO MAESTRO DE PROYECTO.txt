@@ -1,0 +1,1228 @@
+eControl: DOCUMENTO MAESTRO DE PROYECTO
+Plan de Desarrollo Completo - ACTUALIZADO
+
+RESUMEN EJECUTIVO
+Visión del Producto
+eControl es una plataforma SaaS de próxima generación para la administración integral de LAN Centers, que combina control operativo total, inteligencia de negocio y experiencia de usuario superior, diferenciándose por su arquitectura híbrida cloud-local, modo offline robusto y capacidades de IA predictiva.
+Propuesta de Valor Única
+┌─────────────────────────────────────────────────────────┐
+│  "Control Total. Rentabilidad Inteligente. Cero Fricción" │
+└─────────────────────────────────────────────────────────┘
+
+→ Modo offline robusto (funciona sin internet)
+→ IA para optimización de precios y predicción de demanda
+→ Onboarding en menos de 2 horas
+→ Ecosistema abierto (API-first design)
+→ Arquitectura moderna y escalable
+Objetivos SMART del Proyecto
+ObjetivoMétricaPlazoMVP funcionalCore features operativos6 mesesBeta con 5 clientes pilotoFeedback cualitativo recopilado9 mesesLanzamiento comercial50 LAN centers activos12 mesesBreak-evenIngresos > Costos operativos18 mesesExpansión regional200+ clientes en 3 países24 meses
+
+1. ANÁLISIS DE MERCADO
+1.1 Competencia Identificada
+CompetidorFortalezasDebilidadesOportunidad para eControlSENETEcosistema maduro, múltiples integracionesSin modo offline, curva de aprendizaje pronunciadaSimplicidad + resilienciaCyberCafeProEconómico, funcional básicoUI desactualizada, sin cloudModernización + analyticsAntamediaEstable, soporte técnicoCosto por licencia perpetua altoModelo SaaS flexibleSoluciones customPersonalizadas 100%Mantenimiento costoso, no escalablesPersonalización con base estandarizada
+1.2 Segmentos de Mercado Objetivo
+Primario (Año 1-2):
+
+LAN Centers pequeños/medianos (10-50 PCs)
+Ubicación: América Latina (habla hispana)
+Perfil: Emprendedores jóvenes, tech-savvy, presupuesto ajustado
+
+Secundario (Año 3+):
+
+Gaming centers premium (50+ PCs)
+Cadenas multi-ubicación
+Expansión a mercados anglófonos
+
+1.3 Análisis FODA
+Fortalezas:
+
+Aprendizaje de errores de competidores existentes
+Arquitectura moderna desde cero
+Enfoque en UX/UI
+Stack tecnológico optimizado
+
+Oportunidades:
+
+Crecimiento del gaming en LATAM
+Demanda post-pandemia de espacios sociales
+Integración con esports
+Transformación digital de negocios tradicionales
+
+Debilidades:
+
+Sin base de clientes instalada
+Marca nueva (reconocimiento cero)
+Recursos limitados vs. competidores establecidos
+
+Amenazas:
+
+Competidores con pricing agresivo
+Cambios regulatorios (GDPR, protección al menor)
+Disrupción por cloud gaming (Stadia, GeForce Now)
+
+
+2. ANÁLISIS DEL STACK TECNOLÓGICO
+2.1 Stack Definitivo Seleccionado
+┌─────────────────────────────────────────────────────────┐
+│                   STACK TECNOLÓGICO FINAL                │
+└─────────────────────────────────────────────────────────┘
+
+CLIENT SIDE (PC del LAN Center):
+├─ Agent Core Service: Rust (Windows Service nativo)
+│  └─ Footprint: 15-20 MB RAM, <50 MB disco
+├─ Agent UI/Tray: Tauri + React + TypeScript
+│  └─ Footprint adicional: 20-25 MB RAM, 3-8 MB disco
+└─ Local Database: SQLite + sqlcipher (encrypted)
+
+BACKEND (Cloud):
+├─ Runtime: Node.js 20 LTS
+├─ Framework: NestJS + TypeScript
+├─ API Style: REST + GraphQL (opcional fase 2)
+├─ Real-time: Socket.io (WebSockets)
+├─ Queue: BullMQ + Redis
+├─ ORM: Prisma
+└─ Validation: class-validator + class-transformer
+
+DATA LAYER:
+├─ Primary DB: PostgreSQL 16
+├─ Cache: Redis 7
+├─ Search: (Elasticsearch - fase 2)
+├─ Storage: MinIO (S3-compatible) / AWS S3
+└─ Time-series: (TimescaleDB - opcional)
+
+WEB CLIENTS:
+├─ Admin Dashboard: Next.js 14 (App Router)
+│  ├─ Framework: React 18 + TypeScript
+│  ├─ Styling: Tailwind CSS
+│  ├─ Components: shadcn/ui
+│  ├─ State: Zustand + TanStack Query
+│  ├─ Forms: React Hook Form + Zod
+│  └─ Charts: Recharts + D3.js
+│
+└─ Public Site: Next.js 14 (marketing/docs)
+    └─ CMS: (Contentful / Sanity - opcional)
+
+MOBILE:
+└─ Cross-platform: Flutter 3.x (Dart)
+   ├─ iOS: Native compilation
+   ├─ Android: Native compilation
+   ├─ State: Riverpod / Provider
+   └─ API Client: Dio + retrofit
+
+INFRASTRUCTURE:
+├─ Containerization: Docker 24+
+├─ Orchestration: Docker Compose (MVP) → Kubernetes (escala)
+├─ CI/CD: GitHub Actions
+├─ Registry: GitHub Container Registry / Docker Hub
+├─ Reverse Proxy: Nginx / Caddy
+├─ Monitoring: Grafana + Prometheus + Loki
+├─ Error Tracking: Sentry
+├─ Uptime: UptimeRobot / Pingdom
+└─ CDN: Cloudflare
+
+CLOUD PROVIDERS (opciones):
+├─ Opción A: AWS (Producción) + DigitalOcean (Dev/Staging)
+├─ Opción B: Hetzner (costo-efectivo, EU)
+└─ Opción C: DigitalOcean (full stack, simplicidad)
+
+3. ARQUITECTURA DEL SISTEMA
+3.1 Diagrama de Arquitectura General
+┌──────────────────────────────────────────────────────────────────┐
+│                     ECOSISTEMA eControl                           │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─────────────────── NIVEL 1: CLIENTES ───────────────────────────┐
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  LAN Center #1 (Ubicación física)                       │    │
+│  │  ┌───────────────────────────────────────────────────┐  │    │
+│  │  │  eControl Agent (por PC)                          │  │    │
+│  │  │  ┌──────────────────────────────────────────┐     │  │    │
+│  │  │  │ Agent Service (Rust)                     │     │  │    │
+│  │  │  │ - Windows Service (SYSTEM privileges)    │     │  │    │
+│  │  │  │ - Session Manager                        │     │  │    │
+│  │  │  │ - Process Monitor (whitelist)            │     │  │    │
+│  │  │  │ - Kiosk Mode Controller                  │     │  │    │
+│  │  │  │ - SQLite local (offline cache)           │     │  │    │
+│  │  │  │ - WebSocket Client (to backend)          │     │  │    │
+│  │  │  │ - HTTP Server local (port 9876)          │     │  │    │
+│  │  │  │ - Auto-updater                           │     │  │    │
+│  │  │  └──────────────────────────────────────────┘     │  │    │
+│  │  │                     ↕ HTTP                         │  │    │
+│  │  │  ┌──────────────────────────────────────────┐     │  │    │
+│  │  │  │ Agent Tray (Tauri)                       │     │  │    │
+│  │  │  │ - System Tray Icon                       │     │  │    │
+│  │  │  │ - User Overlay (React UI)                │     │  │    │
+│  │  │  │ - Session Status Display                 │     │  │    │
+│  │  │  │ - Store Interface                        │     │  │    │
+│  │  │  │ - Notifications                          │     │  │    │
+│  │  │  └──────────────────────────────────────────┘     │  │    │
+│  │  │                                                    │  │    │
+│  │  │  PC #1, PC #2, ... PC #N (30-50 PCs típico)      │  │    │
+│  │  └───────────────────────────────────────────────────┘  │    │
+│  │                                                           │    │
+│  │  Router/LAN Network (192.168.x.x)                        │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                   │
+│  (LAN Center #2, #3, ... #N - misma estructura)                  │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
+                               ↕
+                    Internet (WSS/HTTPS)
+                               ↕
+┌─────────────────── NIVEL 2: BACKEND CLOUD ───────────────────────┐
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Load Balancer / Reverse Proxy                           │   │
+│  │  (Nginx / Caddy / AWS ALB)                              │   │
+│  │  - SSL Termination (Let's Encrypt)                       │   │
+│  │  - Rate Limiting                                         │   │
+│  │  - DDoS Protection (Cloudflare)                          │   │
+│  └────────────────────┬─────────────────────────────────────┘   │
+│                       ↓                                          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  API Gateway Layer (NestJS)                              │   │
+│  │  ┌────────────────────────────────────────────────────┐  │   │
+│  │  │  Main Application Server                           │  │   │
+│  │  │  - Express HTTP Server                             │  │   │
+│  │  │  - Socket.io WebSocket Server                      │  │   │
+│  │  │  - Authentication Middleware (JWT)                 │  │   │
+│  │  │  - CORS Configuration                              │  │   │
+│  │  │  - Request Logging                                 │  │   │
+│  │  │  - Error Handling                                  │  │   │
+│  │  └────────────────────────────────────────────────────┘  │   │
+│  └────────────────────┬─────────────────────────────────────┘   │
+│                       ↓                                          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Business Logic Layer (NestJS Modules)                   │   │
+│  │                                                           │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
+│  │  │   Auth      │  │   Users     │  │    LANs     │     │   │
+│  │  │   Module    │  │   Module    │  │   Module    │     │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘     │   │
+│  │                                                           │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
+│  │  │  Sessions   │  │   Billing   │  │     PCs     │     │   │
+│  │  │   Module    │  │   Module    │  │   Module    │     │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘     │   │
+│  │                                                           │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
+│  │  │    Store    │  │ Reservations│  │  Analytics  │     │   │
+│  │  │   Module    │  │   Module    │  │   Module    │     │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘     │   │
+│  │                                                           │   │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐     │   │
+│  │  │  Loyalty    │  │Notifications│  │   Reports   │     │   │
+│  │  │   Module    │  │   Module    │  │   Module    │     │   │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘     │   │
+│  │                                                           │   │
+│  └────────────────────┬─────────────────────────────────────┘   │
+│                       ↓                                          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Background Jobs Layer (BullMQ)                          │   │
+│  │  - Session Cleanup                                       │   │
+│  │  - Report Generation                                     │   │
+│  │  - Email/SMS Sending                                     │   │
+│  │  - Data Synchronization                                  │   │
+│  │  - Analytics Processing                                  │   │
+│  │  - Scheduled Tasks (cron jobs)                           │   │
+│  └────────────────────┬─────────────────────────────────────┘   │
+│                       ↓                                          │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Data Layer                                              │   │
+│  │                                                           │   │
+│  │  ┌─────────────────────────────────────────┐            │   │
+│  │  │  PostgreSQL 16 (Primary Database)       │            │   │
+│  │  │  - Users, Sessions, Transactions        │            │   │
+│  │  │  - PCs, Zones, Products                 │            │   │
+│  │  │  - Orders, Reservations                 │            │   │
+│  │  │  - Prisma ORM                           │            │   │
+│  │  │  - Read Replicas (escala)               │            │   │
+│  │  └─────────────────────────────────────────┘            │   │
+│  │                                                           │   │
+│  │  ┌─────────────────────────────────────────┐            │   │
+│  │  │  Redis 7 (Cache + Queue + PubSub)       │            │   │
+│  │  │  - Session Store                        │            │   │
+│  │  │  - API Cache                            │            │   │
+│  │  │  - BullMQ Queue Backend                 │            │   │
+│  │  │  - Rate Limiting                        │            │   │
+│  │  │  - WebSocket PubSub                     │            │   │
+│  │  └─────────────────────────────────────────┘            │   │
+│  │                                                           │   │
+│  │  ┌─────────────────────────────────────────┐            │   │
+│  │  │  MinIO / S3 (Object Storage)            │            │   │
+│  │  │  - User Avatars                         │            │   │
+│  │  │  - Product Images                       │            │   │
+│  │  │  - Report Exports (PDF, Excel)          │            │   │
+│  │  │  - Backup Files                         │            │   │
+│  │  └─────────────────────────────────────────┘            │   │
+│  │                                                           │   │
+│  └───────────────────────────────────────────────────────────┘   │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
+                               ↕
+                          HTTPS/WSS
+                               ↕
+┌─────────────────── NIVEL 3: WEB/MOBILE CLIENTS ──────────────────┐
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Admin Dashboard (Next.js 14)                            │   │
+│  │  ┌────────────────────────────────────────────────────┐  │   │
+│  │  │  App Router Structure:                             │  │   │
+│  │  │  /app                                              │  │   │
+│  │  │    ├─ (auth)                                       │  │   │
+│  │  │    │   ├─ login/                                   │  │   │
+│  │  │    │   └─ register/                                │  │   │
+│  │  │    ├─ (dashboard)                                  │  │   │
+│  │  │    │   ├─ layout.tsx (auth required)              │  │   │
+│  │  │    │   ├─ page.tsx (overview)                     │  │   │
+│  │  │    │   ├─ pcs/                                    │  │   │
+│  │  │    │   ├─ sessions/                               │  │   │
+│  │  │    │   ├─ users/                                  │  │   │
+│  │  │    │   ├─ billing/                                │  │   │
+│  │  │    │   ├─ store/                                  │  │   │
+│  │  │    │   ├─ reservations/                           │  │   │
+│  │  │    │   ├─ analytics/                              │  │   │
+│  │  │    │   └─ settings/                               │  │   │
+│  │  │    └─ api/ (API routes)                           │  │   │
+│  │  │                                                    │  │   │
+│  │  │  Features:                                         │  │   │
+│  │  │  - Server Components (default)                    │  │   │
+│  │  │  - Client Components ('use client')               │  │   │
+│  │  │  - Server Actions (mutations)                     │  │   │
+│  │  │  - Middleware (auth, RBAC)                        │  │   │
+│  │  │  - Streaming SSR                                  │  │   │
+│  │  │  - Optimistic UI updates                          │  │   │
+│  │  │  - Real-time updates (Socket.io)                  │  │   │
+│  │  └────────────────────────────────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Mobile App (Flutter)                                    │   │
+│  │  ┌────────────────────────────────────────────────────┐  │   │
+│  │  │  Project Structure:                                │  │   │
+│  │  │  /lib                                              │  │   │
+│  │  │    ├─ main.dart                                    │  │   │
+│  │  │    ├─ core/                                        │  │   │
+│  │  │    │   ├─ api/ (Dio client)                       │  │   │
+│  │  │    │   ├─ models/                                 │  │   │
+│  │  │    │   └─ utils/                                  │  │   │
+│  │  │    ├─ features/                                    │  │   │
+│  │  │    │   ├─ auth/                                   │  │   │
+│  │  │    │   ├─ home/                                   │  │   │
+│  │  │    │   ├─ reservations/                           │  │   │
+│  │  │    │   ├─ profile/                                │  │   │
+│  │  │    │   └─ store/                                  │  │   │
+│  │  │    └─ widgets/ (shared components)                │  │   │
+│  │  │                                                    │  │   │
+│  │  │  Platforms:                                        │  │   │
+│  │  │  - iOS (Swift native modules)                     │  │   │
+│  │  │  - Android (Kotlin native modules)                │  │   │
+│  │  │                                                    │  │   │
+│  │  │  Features:                                         │  │   │
+│  │  │  - QR Code Scanner (check-in)                     │  │   │
+│  │  │  - Push Notifications (FCM)                       │  │   │
+│  │  │  - Biometric Auth                                 │  │   │
+│  │  │  - Payment Integration                            │  │   │
+│  │  └────────────────────────────────────────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Public Website (Next.js 14)                             │   │
+│  │  - Landing Page                                          │   │
+│  │  - Pricing                                               │   │
+│  │  - Documentation                                         │   │
+│  │  - Blog                                                  │   │
+│  │  - Contact                                               │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                   │
+└───────────────────────────────────────────────────────────────────┘
+3.2 Arquitectura de Comunicación
+┌────────────────────────────────────────────────────────────────┐
+│              PROTOCOLOS Y PATRONES DE COMUNICACIÓN              │
+└────────────────────────────────────────────────────────────────┘
+
+1. Agent Service ↔ Backend
+   ┌─────────────────────────────────────────────────────────┐
+   │  Primary: WebSocket (Socket.io compatible)              │
+   │  - Persistent connection                                │
+   │  - Binary protocol (msgpack)                            │
+   │  - Auto-reconnect with exponential backoff              │
+   │  - Heartbeat every 60s                                  │
+   │  - Room-based events (per LAN Center)                   │
+   │                                                          │
+   │  Fallback: HTTP/REST                                    │
+   │  - Polling cada 30s si WebSocket falla                  │
+   │  - HTTPS obligatorio (TLS 1.3)                          │
+   │  - Retry logic con exponential backoff                  │
+   │                                                          │
+   │  Authentication:                                         │
+   │  - JWT token (renovado cada 12h)                        │
+   │  - PC ID + LAN ID en cada request                       │
+   │  - Certificate pinning                                  │
+   └─────────────────────────────────────────────────────────┘
+
+2. Agent Service ↔ Agent Tray
+   ┌─────────────────────────────────────────────────────────┐
+   │  Protocol: HTTP/REST (localhost only)                    │
+   │  - Service expone API en 127.0.0.1:9876                 │
+   │  - Tauri app consume esta API                           │
+   │  - No auth (localhost trusted)                          │
+   │  - JSON payloads                                        │
+   │                                                          │
+   │  Endpoints:                                              │
+   │  GET  /health                                           │
+   │  GET  /session/status                                   │
+   │  POST /session/extend                                   │
+   │  POST /store/order                                      │
+   │  GET  /settings                                         │
+   └─────────────────────────────────────────────────────────┘
+
+3. Next.js Dashboard ↔ Backend
+   ┌─────────────────────────────────────────────────────────┐
+   │  Primary: HTTP/REST                                      │
+   │  - Next.js Server Components fetch directamente         │
+   │  - Client Components usan TanStack Query                │
+   │  - Server Actions para mutations                        │
+   │                                                          │
+   │  Real-time: WebSocket (Socket.io client)                │
+   │  - Subscribe a eventos del LAN Center actual            │
+   │  - Updates optimistas en UI                             │
+   │  - Room per LAN (isolation)                             │
+   │                                                          │
+   │  Authentication:                                         │
+   │  - Next-Auth / Auth.js                                  │
+   │  - JWT en httpOnly cookie                               │
+   │  - CSRF protection                                      │
+   │  - Session en Redis                                     │
+   └─────────────────────────────────────────────────────────┘
+
+4. Flutter App ↔ Backend
+   ┌─────────────────────────────────────────────────────────┐
+   │  Protocol: HTTP/REST                                     │
+   │  - Dio client con interceptors                          │
+   │  - Retry logic automático                               │
+   │  - Offline caching (Hive DB)                            │
+   │                                                          │
+   │  Real-time (opcional):                                   │
+   │  - Socket.io client para notificaciones                 │
+   │  - FCM Push Notifications                               │
+   │                                                          │
+   │  Authentication:                                         │
+   │  - JWT en secure storage                                │
+   │  - Biometric + PIN                                      │
+   │  - Refresh token automático                             │
+   └─────────────────────────────────────────────────────────┘
+3.3 Flujo de Datos: Inicio de Sesión
+┌────────────────────────────────────────────────────────────────┐
+│         SECUENCIA: Cliente inicia sesión en PC                 │
+└────────────────────────────────────────────────────────────────┘
+
+[1] Cajero en Dashboard                [2] Backend (NestJS)
+    │                                      │
+    │ POST /api/sessions/start             │
+    ├─────────────────────────────────────>│
+    │ {                                    │
+    │   userId: "uuid",                    │ [Valida datos]
+    │   pcId: "uuid",                      │ [Verifica balance]
+    │   rate: 0.05                         │ [Crea Session en DB]
+    │ }                                    │
+    │                                      │
+    │<─────────────────────────────────────┤
+    │ { sessionId, token }                 │
+    │                                      │
+    │                                      │ [3] Socket.io emit
+    │                                      ├──────────┐
+    │                                      │          │
+    │                                      │          ▼
+    │                                      │     [4] Agent Service (Rust)
+    │                                      │          │
+    │                                      │     [Recibe via WebSocket]
+    │                                      │     {
+    │                                      │       type: "START_SESSION",
+    │                                      │       sessionId: "...",
+    │                                      │       userId: "...",
+    │                                      │       ratePerMinute: 0.05
+    │                                      │     }
+    │                                      │          │
+    │                                      │     [Inicia SessionManager]
+    │                                      │     [Guarda en SQLite local]
+    │                                      │     [Desbloquea PC]
+    │                                      │     [Inicia timer]
+    │                                      │          │
+    │                                      │<─────────┤
+    │                                      │   ACK
+    │                                      │
+    │<─────────────────────────────────────┤
+    │ [WebSocket] SESSION_STARTED          │
+    │                                      │
+    │ [UI update: PC #X ocupado]           │
+    │                                      │
+                                           │
+                                           ▼
+                                    [5] Agent Tray (Tauri)
+                                           │
+                                    [Polling localhost:9876]
+                                    GET /session/status
+                                           │
+                                    [Muestra overlay]
+                                    "Sesión iniciada"
+                                    "Bienvenido Juan"
+                                           │
+                                    [Se minimiza a tray]
+
+[6] Cada 60 segundos:
+    
+    Agent Service ────> Backend
+    [WebSocket] HEARTBEAT
+    {
+      sessionId: "...",
+      timeElapsed: 120,
+      currentCost: 0.10
+    }
+    
+    Backend ───> PostgreSQL
+    UPDATE sessions 
+    SET duration_seconds = 120,
+        current_cost = 0.10
+    
+    Backend ───> Dashboard (Socket.io)
+    emit('SESSION_UPDATE', { pcId, duration })
+    
+    Dashboard UI: Updates en tiempo real
+3.4 Arquitectura de Modo Offline
+┌────────────────────────────────────────────────────────────────┐
+│              MODO OFFLINE: FUNCIONAMIENTO AUTÓNOMO              │
+└────────────────────────────────────────────────────────────────┘
+
+ESCENARIO: Internet se cae durante sesiones activas
+
+┌──────────────────────────────────────┐
+│  Agent Service (Rust)                │
+├──────────────────────────────────────┤
+│                                      │
+│  [1] Detecta pérdida de conexión     │
+│      - WebSocket disconnect          │
+│      - Timeout en heartbeat          │
+│      - HTTP requests fallan          │
+│                                      │
+│  [2] Activa modo offline             │
+│      - Flag: is_offline = true       │
+│      - UI muestra: "⚠️ Sin conexión" │
+│                                      │
+│  [3] Continúa operación normal       │
+│      ┌────────────────────────────┐  │
+│      │ Timer local (cada 1s)      │  │
+│      │ - Incrementa segundos      │  │
+│      │ - Calcula costo            │  │
+│      │ - Verifica balance         │  │
+│      └────────────────────────────┘  │
+│                                      │
+│  [4] Guarda eventos en SQLite        │
+│      ┌────────────────────────────┐  │
+│      │ pending_sync table:        │  │
+│      │ ┌────────────────────────┐ │  │
+│      │ │ id: 1                  │ │  │
+│      │ │ type: HEARTBEAT        │ │  │
+│      │ │ payload: {...}         │ │  │
+│      │ │ timestamp: ...         │ │  │
+│      │ │ synced: false          │ │  │
+│      │ └────────────────────────┘ │  │
+│      │ ┌────────────────────────┐ │  │
+│      │ │ id: 2                  │ │  │
+│      │ │ type: SESSION_END      │ │  │
+│      │ │ ...                    │ │  │
+│      │ └────────────────────────┘ │  │
+│      └────────────────────────────┘  │
+│                                      │
+│  [5] Process monitoring continúa     │
+│      - Whitelist enforcement         │
+│      - No requiere internet          │
+│                                      │
+│  [6] Usuario puede:                  │
+│      ✅ Continuar jugando            │
+│      ✅ Finalizar sesión             │
+│      ❌ Recargar saldo (req internet)│
+│      ❌ Comprar en tienda            │
+│                                      │
+└──────────────────────────────────────┘
+                │
+                │ [Internet vuelve]
+                ▼
+┌──────────────────────────────────────┐
+│  Proceso de Sincronización           │
+├──────────────────────────────────────┤
+│                                      │
+│  [1] Agent detecta reconexión        │
+│      - WebSocket reconnect success   │
+│                                      │
+│  [2] Envía SYNC_REQUEST al backend   │
+│      {                               │
+│        type: "OFFLINE_SYNC",         │
+│        pcId: "...",                  │
+│        lastSyncedAt: "timestamp",    │
+│        events: [                     │
+│          { type: "HEARTBEAT", ... }, │
+│          { type: "SESSION_END", ...} │
+│        ]                             │
+│      }                               │
+│                                      │
+│  [3] Backend procesa eventos         │
+│      - Valida orden cronológico      │
+│      - Actualiza DB                  │
+│      - Recalcula si necesario        │
+│      - Envía confirmaciones          │
+│                                      │
+│  [4] Agent marca como sincronizado   │
+│      UPDATE pending_sync             │
+│      SET synced = true               │
+│      WHERE id IN (1, 2, ...)         │
+│                                      │
+│  [5] Limpia registros antiguos       │
+│      DELETE FROM pending_sync        │
+│      WHERE synced = true             │
+│        AND created_at < NOW() - 7d   │
+│                                      │
+│  [6] UI actualiza                    │
+│      "✅ Conectado y sincronizado"   │
+│                                      │
+└──────────────────────────────────────┘
+
+RESOLUCIÓN DE CONFLICTOS:
+
+Si Backend tiene datos diferentes:
+  1. Backend es source of truth
+  2. Agent ajusta balance local
+  3. Notifica discrepancia al admin
+  4. Logs detallados para auditoría
+
+Ejemplo:
+  Agent offline: balance local = $10
+  Usuario recargó $5 en otro LAN
+  Backend: balance = $15
+  → Agent actualiza a $15
+  → Usuario ve $15 (correcto)
+3.5 Seguridad de la Arquitectura
+┌────────────────────────────────────────────────────────────────┐
+│                    CAPAS DE SEGURIDAD                           │
+└────────────────────────────────────────────────────────────────┘
+
+CAPA 1: NETWORK
+├─ TLS 1.3 obligatorio en todas las comunicaciones
+├─ Certificate pinning en Agent
+├─ Cloudflare DDoS protection
+├─ Rate limiting por IP (Nginx)
+└─ Firewall rules estrictas (solo puertos necesarios)
+
+CAPA 2: AUTHENTICATION
+├─ JWT con RS256 (asymmetric keys)
+├─ Access token: 15 min expiry
+├─ Refresh token: 7 días, stored en Redis
+├─ Blacklist de tokens revocados
+├─ Multi-factor authentication (opcional)
+└─ Biometric en mobile app
+
+CAPA 3: AUTHORIZATION (RBAC)
+├─ Roles: SUPER_ADMIN, MANAGER, CASHIER, CLIENT
+├─ Permisos granulares por recurso
+├─ NestJS Guards en cada endpoint
+├─ Middleware en Next.js para rutas protegidas
+└─ Audit log de acciones sensibles
+
+CAPA 4: DATA
+├─ PostgreSQL: passwords con bcrypt (cost 12)
+├─ SQLite local: encrypted con sqlcipher
+├─ Datos sensibles: encrypted at rest (AES-256)
+├─ Backups: encrypted antes de subir a S3
+└─ PII: minimización (solo lo necesario)
+
+CAPA 5: APPLICATION
+├─ Input validation: class-validator en todo DTO
+├─ SQL injection: Prisma ORM (parameterized queries)
+├─ XSS: React auto-escaping + CSP headers
+├─ CSRF: tokens en forms, SameSite cookies
+├─ Dependency scanning: Snyk / Dependabot
+└─ Secret management: AWS Secrets Manager / Vault
+
+CAPA 6: MONITORING
+├─ Sentry: error tracking
+├─ Failed login attempts → alert después de 5 intentos
+├─ Unusual activity detection
+├─ Security logs centralizados (ELK)
+└─ Regular penetration testing (cada 6 meses)
+
+COMPLIANCE:
+├─ GDPR: consent management, right to deletion
+├─ PCI-DSS: no almacenamos tarjetas (Stripe/MP lo manejan)
+├─ SOC 2 Type II (objetivo año 3)
+└─ Privacy policy + Terms of Service
+3.6 Escalabilidad y Performance
+┌────────────────────────────────────────────────────────────────┐
+│              ESTRATEGIA DE ESCALAMIENTO                         │
+└────────────────────────────────────────────────────────────────┘
+
+FASE 1: MVP (1-50 LANs) - Single Server
+┌─────────────────────────────────────┐
+│  DigitalOcean Droplet               │
+│  - 8 vCPU, 16 GB RAM                │
+│  - 160 GB SSD                       │
+│  ┌───────────────────────────────┐  │
+│  │ Docker Compose:               │  │
+│  │ - NestJS app (2 instances)    │  │
+│  │ - PostgreSQL                  │  │
+│  │ - Redis                       │  │
+│  │ - Nginx                       │  │
+│  └───────────────────────────────┘  │
+│  Costo: ~$96/mes                    │
+└─────────────────────────────────────┘
+Capacidad: ~1,500 PCs concurrentes
+
+FASE 2: Crecimiento (51-150 LANs) - Separación
+┌────────────────────┐  ┌────────────────────┐
+│  App Servers (2x)  │  │  Database Tier     │
+│  - NestJS app      │  │  - PostgreSQL 16   │
+│  - 4 vCPU, 8GB     │  │  - Managed service │
+│  ┌──────────────┐  │  │  - 4 vCPU, 16GB    │
+│  │ Load Balancer│  │  │  - Auto backups    │
+│  └──────────────┘  │  └────────────────────┘
+└────────────────────┘  ┌────────────────────┐
+                        │  Redis Cluster     │
+                        │  - Managed service │
+                        │  - 2 nodes         │
+                        └────────────────────┘
+Costo: ~$300/mes
+Capacidad: ~4,500 PCs concurrentes
+
+FASE 3: Escala (151-300 LANs) - Horizontal
+┌──────────────────────────────────────────┐
+│  Load Balancer (AWS ALB / Cloudflare)   │
+└───────────┬──────────────────────────────┘
+            │
+    ┌───────┴───────┬───────────┬─────────┐
+    │               │           │         │
+┌───▼───┐     ┌─────▼──┐  ┌────▼───┐ ┌──▼───┐
+│App #1 │     │App #2  │  │App #3  │ │App #N│
+│4vCPU  │     │4vCPU   │  │4vCPU   │ │      │
+└───┬───┘     └────┬───┘  └────┬───┘ └──┬───┘
+    │              │           │        │
+    └──────────────┴───────────┴────────┘
+                   │
+        ┌──────────▼───────────┐
+        │ PostgreSQL Primary   │
+        │ + Read Replicas (3x) │
+        └──────────────────────┘
+        ┌──────────────────────┐
+        │ Redis Cluster (6 nodos)│
+        └──────────────────────┘
+Costo: ~$800/mes
+Capacidad: ~9,000 PCs concurrentes
+
+OPTIMIZACIONES DE PERFORMANCE:
+
+Database:
+├─ Índices en queries frecuentes
+├─ Materialized views para analytics
+├─ Connection pooling (PgBouncer)
+├─ Read replicas para queries pesados
+└─ Partitioning por fecha (sessions, transactions)
+
+Caching Strategy:
+├─ Redis L1: Session data (5 min TTL)
+├─ Redis L2: User profiles (1 hour TTL)
+├─ Redis L3: Configuraciones (1 day TTL)
+├─ CDN: Assets estáticos (CloudFlare)
+└─ Browser cache: Next.js stale-while-revalidate
+
+API Performance:
+├─ Response compression (gzip/brotli)
+├─ Pagination: cursor-based (no offset/limit en tablas grandes)
+├─ GraphQL DataLoader (batch + cache)
+├─ Rate limiting: 100 req/min por usuario
+└─ API versioning (/api/v1, /api/v2)
+
+WebSocket Optimization:
+├─ Binary protocol (msgpack vs JSON = -40% bandwidth)
+├─ Room-based isolation (no broadcast global)
+├─ Message queuing si cliente lento
+├─ Sticky sessions (load balancer)
+└─ Redis adapter para multi-server
+
+Next.js Optimization:
+├─ Server Components por defecto
+├─ Dynamic imports para bundles grandes
+├─ Image optimization (next/image)
+├─ Font optimization (next/font)
+└─ Edge Functions para geo-routing
+
+4. MODELO DE DATOS
+4.1 Entidades Core (Prisma Schema Conceptual)
+prisma// Usuarios y Autenticación
+model User {
+  id              String          @id @default(uuid())
+  email           String          @unique
+  username        String          @unique
+  passwordHash    String
+  phone           String?
+  balance         Decimal         @default(0) @db.Decimal(10, 2)
+  loyaltyPoints   Int             @default(0)
+  membershipTier  MembershipTier  @default(BRONZE)
+  role            UserRole        @default(CLIENT)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  lastVisit       DateTime?
+  
+  // Relaciones
+  sessions        Session[]
+  reservations    Reservation[]
+  orders          Order[]
+  transactions    Transaction[]
+  rewards         LoyaltyReward[]
+  
+  // Multi-tenancy
+  lanStaff        LANStaff[]      // Si es staff, en qué LANs trabaja
+  
+  @@map("users")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  MANAGER
+  CASHIER
+  CLIENT
+}
+
+enum MembershipTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+// LAN Centers (Multi-tenant)
+model LANCenter {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  address     String
+  city        String
+  country     String
+  timezone    String    @default("America/Lima")
+  
+  ownerId     String
+  owner       User      @relation("LANOwner", fields: [ownerId], references: [id])
+  
+  settings    Json      // Tarifas, horarios, políticas
+  status      LANStatus @default(TRIAL)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relaciones
+  zones       Zone[]
+  staff       LANStaff[]
+  sessions    Session[]
+  products    Product[]
+  orders      Order[]
+  reservations Reservation[]
+  subscription Subscription?
+  
+  @@map("lan_centers")
+}
+
+enum LANStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+// Staff de un LAN Center
+model LANStaff {
+  id          String    @id @default(uuid())
+  lanId       String
+  lan         LANCenter @relation(fields: [lanId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  role        UserRole  // MANAGER o CASHIER típicamente
+  
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime? // Si ya no trabaja ahí
+  
+  @@unique([lanId, userId])
+  @@map("lan_staff")
+}
+
+// Zonas dentro de un LAN
+model Zone {
+  id          String    @id @default(uuid())
+  lanId       String
+  lan         LANCenter @relation(fields: [lanId], references: [id])
+  
+  name        String    // "VIP", "Normal", "Económica"
+  description String?
+  baseRate    Decimal   @db.Decimal(10, 2) // $ por hora
+  
+  position    Int       @default(0) // Para ordenar en UI
+  
+  // Relaciones
+  pcs         PC[]
+  
+  @@map("zones")
+}
+
+// Computadoras
+model PC {
+  id            String    @id @default(uuid())
+  zoneId        String
+  zone          Zone      @relation(fields: [zoneId], references: [id])
+  
+  name          String    // "PC #01"
+  specs         Json      // { gpu, cpu, ram, storage }
+  status        PCStatus  @default(AVAILABLE)
+  
+  agentVersion  String?   // Versión del agent instalado
+  lastHeartbeat DateTime? // Última vez que envió heartbeat
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relaciones
+  sessions      Session[]
+  reservations  Reservation[]
+  maintenanceLogs MaintenanceLog[]
+  
+  @@map("pcs")
+}
+
+enum PCStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+  OFFLINE
+}
+
+// Sesiones de juego
+model Session {
+  id              String        @id @default(uuid())
+  
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  
+  pcId            String
+  pc              PC            @relation(fields: [pcId], references: [id])
+  
+  lanId           String
+  lan             LANCenter     @relation(fields: [lanId], references: [id])
+  
+  startedAt       DateTime      @default(now())
+  endedAt         DateTime?
+  durationSeconds Int           @default(0)
+  
+  ratePerMinute   Decimal       @db.Decimal(10, 4)
+  totalCost       Decimal       @default(0) @db.Decimal(10, 2)
+  
+  status          SessionStatus @default(ACTIVE)
+  paymentMethod   String?       // "BALANCE", "CASH", "CARD"
+  
+  // Relaciones
+  transactions    Transaction[]
+  orders          Order[]
+  
+  @@index([userId, startedAt])
+  @@index([pcId, status])
+  @@index([lanId, startedAt])
+  @@map("sessions")
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABORTED
+}
+
+// Reservas
+model Reservation {
+  id              String            @id @default(uuid())
+  
+  userId          String
+  user            User              @relation(fields: [userId], references: [id])
+  
+  pcId            String
+  pc              PC                @relation(fields: [pcId], references: [id])
+  
+  lanId           String
+  lan             LANCenter         @relation(fields: [lanId], references: [id])
+  
+  reservedFor     DateTime          // Fecha/hora de la reserva
+  durationMinutes Int
+  
+  depositAmount   Decimal           @db.Decimal(10, 2)
+  totalCost       Decimal           @db.Decimal(10, 2)
+  
+  status          ReservationStatus @default(PENDING)
+  qrCode          String            @unique // Para check-in
+  
+  cancellationReason String?
+  penaltyApplied  Decimal?          @db.Decimal(10, 2)
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@index([userId, reservedFor])
+  @@index([pcId, reservedFor])
+  @@index([lanId, status])
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  PENDING       // Creada, esperando pago
+  CONFIRMED     // Pagada
+  CHECKED_IN    // Usuario llegó
+  COMPLETED     // Sesión terminó
+  CANCELLED     // Cancelada por usuario
+  NO_SHOW       // No se presentó
+}
+
+// Productos de tienda
+model Product {
+  id          String    @id @default(uuid())
+  lanId       String
+  lan         LANCenter @relation(fields: [lanId], references: [id])
+  
+  name        String
+  category    String    // "FOOD", "BEVERAGE", "MERCHANDISE", "DIGITAL"
+  description String?
+  
+  price       Decimal   @db.Decimal(10, 2)
+  cost        Decimal?  @db.Decimal(10, 2) // Costo para analytics
+  stock       Int       @default(0)
+  
+  imageUrl    String?
+  isActive    Boolean   @default(true)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relaciones
+  orderItems  OrderItem[]
+  
+  @@index([lanId, category])
+  @@map("products")
+}
+
+// Órdenes de tienda
+model Order {
+  id          String      @id @default(uuid())
+  
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  
+  sessionId   String?
+  session     Session?    @relation(fields: [sessionId], references: [id])
+  
+  lanId       String
+  lan         LANCenter   @relation(fields: [lanId], references: [id])
+  
+  totalAmount Decimal     @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING)
+  
+  orderedAt   DateTime    @default(now())
+  deliveredAt DateTime?
+  
+  // Relaciones
+  items       OrderItem[]
+  transaction Transaction?
+  
+  @@index([userId, orderedAt])
+  @@index([lanId, status])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+  
+  @@map("order_items")
+}
+
+// Transacciones financieras
+model Transaction {
+  id            String            @id @default(uuid())
+  
+  userId        String
+  user          User              @relation(fields: [userId], references: [id])
+  
+  lanId         String            // Para reporting por LAN
+  
+  sessionId     String?
+  session       Session?          @relation(fields: [sessionId], references: [id])
+  
+  orderId       String?           @unique
+  order         Order?            @relation(fields: [orderId], references: [id])
+  
+  type          TransactionType
+  amount        Decimal           @db.Decimal(10, 2)
+  balanceBefore Decimal           @db.Decimal(10, 2)
+  balanceAfter  Decimal           @db.Decimal(10, 2)
+  
+  paymentMethod String?           // "CASH", "CARD", "YAPE", "PLIN", etc.
+  reference     String?           // ID de transacción externa
+  
+  notes         String?
+  
+  createdAt     DateTime          @default(now())
+  
+  @@index([userId, createdAt])
+  @@index([lanId, createdAt])
+  @@index([type, createdAt])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  RECHARGE           // Recarga de saldo
+  SESSION_PAYMENT    // Pago por sesión
+  STORE_PURCHASE     // Compra en tienda
+  REFUND             // Devolución
+  PENALTY            // Penalización (no-show)
+  LOYALTY_REWARD     // Recompensa por lealtad
+  ADJUSTMENT         // Ajuste manual
+}
+
+// Programa de lealtad
+model LoyaltyReward {
+  id        String              @id @default(uuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id])
+  
+  type      LoyaltyRewardType
+  value     Decimal             @db.Decimal(10, 2)
+  expiresAt DateTime?
+  
+  status    LoyaltyRewardStatus @default(PENDING)
+  redeemedAt DateTime?
+  
+  createdAt DateTime            @default(now())
+  
+  @@index([userId, status])
+  @@map("loyalty_rewards")
+}
+
+enum LoyaltyRewardType {
+  CASHBACK
+  FREE_HOURS
+  DISCOUNT_COUPON
+  BONUS_POINTS
+}
+
+enum LoyaltyRewardStatus {
+  PENDING
+  REDEEMED
+  EXPIRED
+}
+
+// Logs de mantenimiento
+model MaintenanceLog {
+  id          String   @id @default(uuid())
+  pcId        String
+  pc          PC       @relation(fields: [pcId], references: [id])
+  
+  performedBy String   // userId del técnico/admin
+  issue       String
+  action      String
+  cost        Decimal? @db.Decimal(10, 2)
+  
+  performedAt DateTime @default(now())
+  
+  @@index([pcId, performedAt])
+  @@map("maintenance_logs")
+}
+
+// Suscripciones (billing para LANs)
+model Subscription {
+  id            String             @id @default(uuid())
+  lanId         String             @unique
+  lan           LANCenter          @relation(fields: [lanId], references: [id])
+  
+  plan          SubscriptionPlan
+  status        SubscriptionStatus @default(ACTIVE)
+  
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  
+  cancelAt      DateTime?
+  canceledAt    DateTime?
+  
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  
+  @@map("subscriptions")
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PROFESSIONAL
+  BUSINESS
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  PAUSED
+}
+```
+
+### 4.2 Relaciones Clave
+```
+Modelo Multi-Tenant:
+─────────────────────
+LANCenter (1) ────< (N) Zone
+LANCenter (1) ────< (N) PC (via Zone)
+LANCenter (1) ────< (N) Session
+LANCenter (1) ────< (N) Product
+LANCenter (1) ────< (N) Order
+
+Operaciones:
+────────────
+User (1) ────< (N) Session
+PC (1) ────< (N) Session
+Session (1) ────< (N) Transaction
+Session (1) ────< (N) Order
+
+Reservas:
+─────────
+User (1) ────< (N) Reservation
+PC (1) ────< (N) Reservation
+
+Tienda:
+───────
+Product (1) ────< (N) OrderItem
+Order (1) ────< (N) OrderItem
+Order (1) ───── (1) Transaction [opcional]
+
+Lealtad:
+────────
+User (1) ────< (N) LoyaltyReward

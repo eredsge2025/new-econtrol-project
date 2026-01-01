@@ -1,0 +1,14 @@
+[
+  {
+    "name": "PC04",
+    "status": "OFFLINE",
+    "ipAddress": "192.168.93.130",
+    "lastHeartbeat": "2025-12-28T02:13:49.348Z"
+  },
+  {
+    "name": "PC03",
+    "status": "OFFLINE",
+    "ipAddress": "192.168.93.129",
+    "lastHeartbeat": "2025-12-28T02:13:41.551Z"
+  }
+]

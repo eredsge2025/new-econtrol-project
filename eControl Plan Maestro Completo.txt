@@ -1,0 +1,1391 @@
+eControl: Plan Maestro Completo
+Antes de Escribir una Línea de Código
+
+1. STACK TECNOLÓGICO DEFINITIVO
+1.1 Resumen Ejecutivo del Stack
+┌─────────────────────────────────────────────────────────┐
+│                   STACK FINAL                            │
+└─────────────────────────────────────────────────────────┘
+
+CLIENT SIDE (PC del LAN):
+├─ Agent Core: Rust (Windows Service) 
+├─ Agent UI: Tauri + React + TypeScript
+└─ Local DB: SQLite
+
+BACKEND (Cloud):
+├─ API: Node.js + NestJS + TypeScript
+├─ Realtime: Socket.io (WebSockets)
+├─ Database: PostgreSQL 16
+├─ Cache: Redis 7
+├─ Queue: BullMQ
+└─ Storage: MinIO (S3-compatible)
+
+WEB CLIENTS:
+├─ Admin Dashboard: Next.js 14 (App Router) + TypeScript
+├─ Public Site: Next.js 14 (marketing/landing)
+└─ UI Library: shadcn/ui + Tailwind CSS
+
+MOBILE:
+└─ Apps: Flutter (iOS + Android)
+
+INFRASTRUCTURE:
+├─ Containerization: Docker + Docker Compose
+├─ Orchestration: Kubernetes (post-scale)
+├─ CI/CD: GitHub Actions
+├─ Monitoring: Grafana + Prometheus + Loki
+├─ Cloud: AWS / DigitalOcean / Hetzner
+└─ CDN: Cloudflare
+
+2. JUSTIFICACIÓN DE CADA DECISIÓN TECNOLÓGICA
+2.1 ¿Por qué Rust para el Agent Core?
+Alternativas consideradas:
+
+❌ Electron: Footprint inaceptable (100-300 MB RAM)
+❌ .NET: Bueno, pero queremos Rust skills en el equipo
+✅ Rust puro: Footprint mínimo (15-20 MB RAM)
+
+Ventajas específicas:
+
+Memory safety sin garbage collector
+Performance nativa (comparable a C++)
+Excelente para system programming (hooks, services)
+Cross-compilation (futuro: Linux LAN centers)
+Comunidad activa en tooling de sistema
+
+Desventajas aceptadas:
+
+Curva de aprendizaje pronunciada
+Compilación más lenta que Node.js
+Menos developers disponibles
+
+Decisión: El footprint y performance justifican la inversión en aprendizaje.
+
+2.2 ¿Por qué Tauri para el Agent UI?
+Alternativas consideradas:
+
+❌ Electron: Descartado por peso
+❌ .NET WPF: UI menos moderna
+❌ Rust GUI puro (iced/egui): Ecosistema inmaduro
+✅ Tauri: Balance perfecto
+
+Ventajas específicas:
+
+Usa WebView nativo (no embeds Chromium)
+Frontend con tecnologías web modernas (React)
+Binario final: 3-8 MB
+Comunicación limpia con el Service vía HTTP local
+Hot reload durante desarrollo
+
+Desventajas aceptadas:
+
+Dos procesos corriendo (Service + Tray)
+Comunicación inter-proceso añade complejidad
+
+Decisión: La separación de concerns es arquitectónicamente superior. El Service hace el trabajo pesado, el Tray solo presenta información.
+
+2.3 ¿Por qué Node.js + NestJS para el Backend?
+Alternativas consideradas:
+
+❌ Rust (Axum): Excelente performance pero desarrollo más lento
+❌ Go: Muy bueno, pero ecosistema más pequeño
+❌ Python (Django/FastAPI): Más lento, no type-safe nativamente
+✅ Node.js + NestJS: Developer velocity óptima
+
+Ventajas específicas:
+
+TypeScript = Type safety comparable a Rust/Go
+NestJS = Arquitectura enterprise (modular, testeable)
+Ecosistema npm gigantesco
+Fácil encontrar developers Sr/Mid
+Prisma ORM es excepcional
+Socket.io maduro para WebSockets
+Async/await natural para I/O-bound operations
+
+Desventajas aceptadas:
+
+Performance inferior a Rust/Go (pero suficiente para nuestro caso)
+Consumo de memoria más alto en servidor
+
+Decisión: Time-to-market es crítico para un MVP. Node.js acelera desarrollo 2-3x vs Rust backend.
+
+2.4 ¿Por qué Next.js 14 para Admin Dashboard?
+Alternativas consideradas:
+
+❌ Create React App: Deprecated, no SSR
+❌ Vite + React: Excelente, pero sin SSR/SSG out-of-box
+❌ Remix: Muy bueno, pero menor ecosistema
+✅ Next.js 14 (App Router): Estándar de facto
+
+Ventajas específicas:
+
+Server Components = Mejor performance inicial
+Server Actions = API calls simplificadas
+File-based routing = Organización intuitiva
+Built-in optimizaciones (Image, Font, etc.)
+Streaming SSR = UX superior en dashboards complejos
+Middleware = Auth/RBAC centralizado
+Vercel deployment = Trivial (opcional)
+
+Por qué App Router (no Pages Router):
+
+Es el futuro de Next.js
+Mejor separación server/client components
+Layouts anidados más intuitivos
+React Server Components nativo
+
+Desventajas aceptadas:
+
+Curva de aprendizaje (App Router es nuevo)
+Algunos paquetes no compatibles con Server Components
+
+Decisión: El Dashboard es complejo (mapas, gráficos, tiempo real). Next.js maneja esta complejidad mejor que cualquier alternativa.
+
+2.5 ¿Por qué Flutter para Mobile?
+Alternativas consideradas:
+
+❌ React Native: Buen ecosistema, pero performance inferior
+❌ Native (Swift + Kotlin): Mejor performance, pero doble codebase
+✅ Flutter: Single codebase, performance casi nativa
+
+Ventajas específicas:
+
+Hot reload espectacular
+UI consistente iOS/Android
+Dart es type-safe y performante
+Widgets ricos out-of-box
+Compilación a código nativo (no bridge JS)
+
+Desventajas aceptadas:
+
+Dart es otro lenguaje que aprender
+Apps más pesadas que native (~20 MB overhead)
+
+Decisión: Para un equipo pequeño, mantener dos codebases nativos es inviable. Flutter es el mejor compromiso.
+
+2.6 ¿Por qué PostgreSQL?
+Alternativas consideradas:
+
+❌ MySQL: Menos features avanzadas
+❌ MongoDB: No-SQL no apropiado para datos transaccionales
+❌ SQLite: No apto para multi-tenant cloud
+✅ PostgreSQL: Base de datos más completa
+
+Ventajas específicas:
+
+ACID compliant (crítico para billing)
+JSON/JSONB columns (flexibilidad cuando necesario)
+Extensions poderosas (PostGIS, pg_cron, timescaledb)
+Prisma tiene excelente soporte
+Performance excelente con índices correctos
+Open source, sin vendor lock-in
+
+
+2.7 ¿Por qué Redis?
+Usos específicos en eControl:
+
+Session storage (JWT blacklist, user sessions)
+Cache de queries frecuentes (stats, leaderboards)
+Rate limiting
+BullMQ queue backend
+Pub/Sub para eventos en tiempo real
+
+Alternativa: Valkey (fork open-source post Redis license change)
+
+2.8 ¿Por qué Docker + Kubernetes?
+Fase MVP (Mes 1-12):
+
+Docker Compose suficiente
+Deploy en VPS único (DigitalOcean droplet)
+
+Fase Crecimiento (Mes 13+):
+
+Kubernetes cuando >100 LANs activos
+Auto-scaling necesario
+Multi-region deployment
+
+
+3. ARQUITECTURA DE DATOS
+3.1 Modelo de Datos Conceptual
+┌─────────────────────────────────────────────────────────┐
+│                  ENTIDADES CORE                          │
+└─────────────────────────────────────────────────────────┘
+
+USER (Usuario)
+├─ id, email, username, passwordHash
+├─ phone, balance, loyaltyPoints, membershipTier
+├─ role (SUPER_ADMIN, MANAGER, CASHIER, CLIENT)
+├─ createdAt, updatedAt, lastVisit
+└─ Relaciones: sessions[], reservations[], orders[]
+
+LAN_CENTER (Centro de Gaming)
+├─ id, name, address, timezone
+├─ ownerId (User)
+├─ settings (JSON: tarifas, horarios, etc.)
+├─ status (ACTIVE, SUSPENDED, TRIAL)
+└─ Relaciones: zones[], staff[], subscriptions[]
+
+ZONE (Zona dentro del LAN)
+├─ id, name, lanCenterId
+├─ baseRate ($ por hora)
+├─ description
+└─ Relaciones: pcs[]
+
+PC (Computadora)
+├─ id, name (ej: "PC #01"), zoneId
+├─ specs (JSON: GPU, CPU, RAM)
+├─ status (AVAILABLE, OCCUPIED, RESERVED, MAINTENANCE)
+├─ agentVersion, lastHeartbeat
+└─ Relaciones: sessions[], reservations[], maintenanceLogs[]
+
+SESSION (Sesión de juego)
+├─ id, userId, pcId, lanCenterId
+├─ startedAt, endedAt, durationSeconds
+├─ ratePerMinute, totalCost
+├─ status (ACTIVE, COMPLETED, ABORTED)
+├─ paymentMethod
+└─ Relaciones: user, pc, transactions[]
+
+RESERVATION (Reserva)
+├─ id, userId, pcId, lanCenterId
+├─ reservedFor (datetime), durationMinutes
+├─ depositAmount, totalCost
+├─ status (PENDING, CONFIRMED, CHECKED_IN, COMPLETED, CANCELLED, NO_SHOW)
+├─ cancellationReason, penaltyApplied
+└─ Relaciones: user, pc, payment
+
+PRODUCT (Productos de tienda)
+├─ id, lanCenterId, name, category
+├─ price, cost, stock
+├─ imageUrl, description
+├─ isActive
+└─ Relaciones: orderItems[]
+
+ORDER (Orden de tienda)
+├─ id, userId, sessionId, lanCenterId
+├─ items (JSON or relation), totalAmount
+├─ status (PENDING, PREPARING, READY, DELIVERED, CANCELLED)
+├─ orderedAt, deliveredAt
+└─ Relaciones: user, session, orderItems[]
+
+TRANSACTION (Transacciones financieras)
+├─ id, userId, lanCenterId
+├─ type (RECHARGE, SESSION_PAYMENT, STORE_PURCHASE, REFUND, PENALTY)
+├─ amount, balanceBefore, balanceAfter
+├─ paymentMethod, reference
+├─ createdAt
+└─ Relaciones: user, session?, order?
+
+LOYALTY_REWARD (Recompensas)
+├─ id, userId, type (CASHBACK, FREE_HOURS, DISCOUNT_COUPON)
+├─ value, expiresAt
+├─ status (PENDING, REDEEMED, EXPIRED)
+└─ Relaciones: user
+
+MAINTENANCE_LOG (Mantenimientos)
+├─ id, pcId, performedBy (userId)
+├─ issue, action, cost
+├─ performedAt
+└─ Relaciones: pc, user
+3.2 Relaciones Críticas
+User 1:N Session (un usuario tiene muchas sesiones)
+PC 1:N Session (una PC tiene muchas sesiones)
+User 1:N Reservation
+PC 1:N Reservation
+Session 1:N Transaction (una sesión puede generar múltiples transacciones)
+User 1:N Transaction
+Order 1:N OrderItem
+Product 1:N OrderItem
+LAN_CENTER 1:N Zone
+Zone 1:N PC
+LAN_CENTER 1:N User (staff)
+
+4. FLUJOS DE DATOS CRÍTICOS
+4.1 Flujo: Inicio de Sesión
+┌─────────────────────────────────────────────────────────┐
+│  FLUJO: Cliente inicia sesión en PC                     │
+└─────────────────────────────────────────────────────────┘
+
+[Cliente] → Se acerca al mostrador con su usuario
+
+[Cajero] → Abre Next.js Dashboard
+         → Busca usuario (por username, email, o phone)
+         → Verifica saldo disponible
+         → Selecciona PC disponible en mapa interactivo
+         → Clic en "Iniciar Sesión"
+
+[Backend] → Valida datos
+          → Crea registro de Session (status: ACTIVE)
+          → Genera SessionToken
+          → Envía comando al Agent vía WebSocket:
+            {
+              type: "START_SESSION",
+              sessionId: "...",
+              userId: "...",
+              ratePerMinute: 0.05,
+              balance: 10.00
+            }
+
+[Agent Service (Rust)] 
+          → Recibe comando WebSocket
+          → Inicia SessionManager local
+          → Desbloquea PC (sale de kiosk mode parcial)
+          → Inicia timer local (cuenta cada segundo)
+          → Guarda en SQLite local (backup offline)
+          → Responde ACK al backend
+
+[Agent Tray (Tauri)] 
+          → Recibe notificación del Service
+          → Muestra overlay de bienvenida:
+            "Sesión iniciada. Bienvenido, Juan!"
+          → Se minimiza a system tray
+
+[Cliente] → Empieza a jugar
+
+[Agent Service] 
+          → Cada 60 segundos: envía heartbeat al backend
+            {
+              type: "HEARTBEAT",
+              sessionId: "...",
+              timeElapsed: 120,
+              currentCost: 0.10
+            }
+          → Cada 1 segundo: actualiza timer local
+          → Si falla conexión: continúa contando offline
+
+[Backend] → Recibe heartbeats
+          → Actualiza Session.durationSeconds
+          → Calcula totalCost actual
+          → Verifica balance del usuario
+          → Si balance < cost → envía advertencia
+
+[Agent Service] 
+          → Si balance bajo (5 min restantes):
+            Notifica al Tray → muestra alerta al usuario
+
+[Usuario] → Puede extender tiempo desde Tray
+          → O ignorar y continuar hasta que se acabe
+4.2 Flujo: Finalización de Sesión
+[Opciones de finalización]
+A) Usuario termina voluntariamente (clic en "Finalizar")
+B) Se acaba el saldo
+C) Cajero finaliza desde Dashboard
+
+[Cualquier caso] →
+
+[Agent Service] 
+          → Detiene timer
+          → Calcula costo final
+          → Guarda en SQLite local
+          → Envía al backend:
+            {
+              type: "END_SESSION",
+              sessionId: "...",
+              finalDuration: 3600,
+              finalCost: 3.00
+            }
+          → Bloquea PC (vuelve a kiosk mode completo)
+
+[Backend] → Actualiza Session (status: COMPLETED, endedAt, totalCost)
+          → Crea Transaction (type: SESSION_PAYMENT)
+          → Descuenta del balance del usuario
+          → Calcula loyalty points ganados
+          → Si hay rewards pending → los aplica
+
+[Next.js Dashboard] 
+          → Actualiza mapa (PC pasa a AVAILABLE)
+          → Muestra notificación: "Sesión finalizada - $3.00"
+          → Imprime ticket (opcional)
+4.3 Flujo: Compra en Tienda (sin interrumpir juego)
+[Usuario jugando] → Presiona Ctrl+Shift+E
+
+[Agent Tray] → Muestra overlay
+             → Usuario navega a "Tienda"
+             → Ve productos disponibles (Coca Cola, snacks, etc.)
+             → Añade al carrito
+             → Confirma orden
+
+[Agent Tray] → Envía al Service:
+               {
+                 type: "PLACE_ORDER",
+                 sessionId: "...",
+                 items: [{productId: "...", quantity: 2}]
+               }
+
+[Agent Service] → Envía al backend vía HTTP:
+                  POST /orders
+                  { sessionId, items }
+
+[Backend] → Valida balance del usuario
+          → Crea Order (status: PENDING)
+          → Descuenta del balance
+          → Crea Transaction
+          → Notifica a cocina/bar vía WebSocket
+
+[Dashboard de Cocina] 
+          → Recibe notificación
+          → Muestra orden:
+            "PC #07 - Juan: 2x Coca Cola"
+          → Staff prepara orden
+          → Clic en "Listo para entregar"
+
+[Backend] → Actualiza Order (status: READY)
+          → Envía notificación al Agent
+
+[Agent Tray] → Muestra notificación push:
+               "Tu pedido está listo 🍕"
+
+[Staff] → Entrega productos en el asiento del cliente
+        → Marca como DELIVERED en Dashboard
+
+[Usuario] → Sigue jugando sin haber parado
+4.4 Flujo: Reserva desde Mobile App
+[Usuario] → Abre Flutter App
+          → Login con email/password
+          → Navega a "Reservar"
+
+[App] → Muestra calendario
+      → Usuario selecciona fecha y hora
+      → App consulta backend: GET /reservations/availability
+
+[Backend] → Consulta PCs disponibles para ese slot
+          → Retorna lista con zonas y precios
+
+[App] → Muestra mapa interactivo del LAN
+      → Usuario selecciona PC específica (ej: PC #12 en zona VIP)
+      → Muestra precio: $2.00 depósito + tarifa normal al llegar
+      → Usuario confirma
+
+[Backend] → Crea Reservation (status: PENDING)
+          → Genera QR code único
+          → Procesa pago de depósito (Stripe/Mercado Pago)
+          → Si pago exitoso → status: CONFIRMED
+          → Envía email/SMS con confirmación + QR
+
+[Usuario] → Recibe notificación: "Reserva confirmada"
+
+[Día de la reserva, 1 hora antes]
+[Backend] → Cron job detecta reservas próximas
+          → Envía push notification: "Tu reserva es en 1 hora"
+
+[Usuario llega al LAN]
+[Cajero] → Usuario muestra QR desde app
+         → Cajero escanea QR en Dashboard
+         → Dashboard valida reserva
+         → Clic en "Check-in"
+
+[Backend] → Actualiza Reservation (status: CHECKED_IN)
+          → Inicia Session automáticamente
+          → Aplica crédito del depósito
+
+[Si usuario NO llega]
+[Backend] → Cron job detecta no-show (15 min después de hora reservada)
+          → Actualiza Reservation (status: NO_SHOW)
+          → Aplica penalización (ej: pierde 50% del depósito)
+          → Crea Transaction (type: PENALTY)
+          → Libera PC para otros usuarios
+
+5. COMUNICACIÓN EN TIEMPO REAL
+5.1 WebSocket: Agent ↔ Backend
+Propósito: Mantener conexión persistente para comandos críticos
+Eventos del Backend → Agent:
+typescriptSTART_SESSION     // Iniciar sesión
+PAUSE_SESSION     // Pausar (raro, pero posible)
+END_SESSION       // Terminar sesión
+UPDATE_WHITELIST  // Actualizar apps permitidas
+UPDATE_SETTINGS   // Cambiar tarifas, configuración
+FORCE_RESTART     // Reiniciar PC remoto
+SHOW_MESSAGE      // Mostrar mensaje al usuario
+Eventos del Agent → Backend:
+typescriptHEARTBEAT         // Cada 60s: "sigo vivo"
+SESSION_STARTED   // Confirmación de inicio
+SESSION_ENDED     // Confirmación de fin
+STATUS_UPDATE     // Estado de la PC
+ERROR             // Reportar errores
+OFFLINE_SYNC      // Sincronizar datos acumulados offline
+Tecnología:
+
+Backend: Socket.io (NestJS Gateway)
+Agent: tokio-tungstenite (WebSocket client)
+
+Resiliencia:
+
+Reconexión automática con exponential backoff
+Buffer de mensajes durante desconexión
+Fallback a HTTP polling si WebSocket falla
+
+
+5.2 WebSocket: Dashboard ↔ Backend
+Propósito: Actualizar UI en tiempo real sin polling
+Eventos:
+typescript// Backend → Dashboard
+PC_STATUS_CHANGED      // PC cambió de estado (ocupado, libre, etc.)
+SESSION_STARTED        // Nueva sesión comenzó
+SESSION_ENDED          // Sesión finalizó
+NEW_ORDER              // Nueva orden de tienda
+BALANCE_UPDATED        // Usuario recargó saldo
+NEW_RESERVATION        // Nueva reserva creada
+
+// Dashboard → Backend
+SUBSCRIBE_LAN          // Suscribirse a eventos de un LAN específico
+UNSUBSCRIBE_LAN        // Desuscribirse
+```
+
+**Room-based:** Cada LAN center tiene su "room" de Socket.io para aislar eventos
+
+---
+
+## 6. MODO OFFLINE (CRÍTICO)
+
+### 6.1 ¿Qué funciona sin internet?
+```
+✅ FUNCIONA OFFLINE:
+- Iniciar sesión (si ya se configuró previamente)
+- Contar tiempo
+- Calcular costo
+- Bloqueo de aplicaciones (whitelist)
+- Finalizar sesión
+- Guardar todo en SQLite local
+
+❌ NO FUNCIONA OFFLINE:
+- Iniciar primera sesión de un usuario nuevo
+- Recargar saldo
+- Sincronizar con dashboard en tiempo real
+- Compras en tienda (no hay inventario actualizado)
+```
+
+### 6.2 Estrategia de Sincronización
+```
+[Internet se corta durante sesiones activas]
+
+[Agent Service] 
+→ Detecta pérdida de conexión
+→ Continúa operando normalmente (timer local)
+→ Guarda todos los eventos en SQLite:
+  - session_events (heartbeats no enviados)
+  - transactions_pending (finalizaciones)
+→ Muestra en Tray: "⚠️ Modo offline"
+
+[Internet vuelve]
+
+[Agent Service]
+→ Detecta reconexión
+→ Inicia proceso de sync:
+  1. Envía OFFLINE_SYNC con todos los eventos acumulados
+  2. Backend valida y procesa en orden
+  3. Backend responde con confirmaciones
+  4. Agent borra registros sincronizados de SQLite
+→ Muestra en Tray: "✅ Conectado"
+
+[Conflictos posibles]
+- Usuario recargó saldo en otro LAN mientras este estaba offline
+- Solución: Backend es source of truth, ajusta balance localmente
+```
+
+---
+
+## 7. SEGURIDAD
+
+### 7.1 Autenticación y Autorización
+
+**JWT Strategy:**
+```
+[Login]
+→ Usuario envía credentials
+→ Backend valida contra PostgreSQL (bcrypt)
+→ Genera JWT (access_token + refresh_token)
+→ access_token: expires en 15 min
+→ refresh_token: expires en 7 días, stored in Redis
+
+[Request autenticado]
+→ Frontend envía access_token en header: Authorization: Bearer <token>
+→ Backend valida JWT
+→ Si expiró pero <15 min → acepta (grace period)
+→ Si expiró >15 min → rechaza, frontend usa refresh_token
+
+[Refresh]
+→ Frontend detecta 401
+→ Envía refresh_token a /auth/refresh
+→ Backend valida contra Redis
+→ Genera nuevo access_token
+→ Usuario no se entera (seamless)
+```
+
+**RBAC (Role-Based Access Control):**
+```
+Roles y permisos:
+
+SUPER_ADMIN (propietario):
+→ Full access a todo
+→ Puede crear managers
+
+MANAGER (gerente):
+→ Ver todos los reportes
+→ Modificar tarifas
+→ Gestionar inventario
+→ Ver todas las sesiones
+→ NO puede: eliminar datos críticos, cambiar suscripción
+
+CASHIER (cajero):
+→ Iniciar/terminar sesiones
+→ Recargar saldo de clientes
+→ Procesar órdenes de tienda
+→ Ver reportes limitados (solo del día actual)
+→ NO puede: modificar tarifas, ver histórico completo
+
+CLIENT (jugador):
+→ Ver su propio perfil
+→ Ver su historial
+→ Hacer reservas
+→ Recargar su saldo
+→ NO puede: ver otros usuarios, acceder a dashboard admin
+```
+
+### 7.2 Seguridad del Agent
+
+**Prevención de Tampering:**
+```
+1. Agent Service corre como SYSTEM (máximos privilegios)
+2. Archivos protegidos con permisos restrictivos
+3. SQLite local encriptado (sqlcipher)
+4. Comunicación con backend: TLS 1.3 obligatorio
+5. Validación de certificados estricta
+6. Agent verifica firma digital de updates antes de aplicar
+```
+
+**Whitelist Enforcement:**
+```
+- Procesos permitidos se definen en backend
+- Agent sincroniza whitelist cada 1 hora
+- Si falla sync: usa última whitelist conocida
+- Logs de todos los intentos de ejecución no autorizada
+```
+
+---
+
+## 8. ESCALABILIDAD
+
+### 8.1 Proyección de Carga
+```
+Escenario: 200 LAN Centers activos (objetivo 24 meses)
+
+Promedio por LAN:
+- 30 PCs
+- 60% ocupación promedio
+- 10 horas operación/día
+
+Total:
+- 6,000 PCs totales
+- 3,600 sesiones concurrentes en pico
+- ~50,000 sesiones/día
+- ~1.5M sesiones/mes
+
+WebSocket connections:
+- 3,600 agents conectados simultáneamente
+- ~500 dashboards abiertos
+- Total: ~4,100 conexiones WS concurrentes
+```
+
+### 8.2 Estrategia de Escalamiento
+
+**Fase 1 (1-50 LANs):**
+```
+Single VPS:
+- 8 vCPUs
+- 16 GB RAM
+- NestJS app
+- PostgreSQL
+- Redis
+- Todo en una máquina
+
+Costo: ~$80/mes (DigitalOcean)
+```
+
+**Fase 2 (51-100 LANs):**
+```
+Separar servicios:
+- 1x App server (NestJS)
+- 1x Database (PostgreSQL managed)
+- 1x Redis managed
+- Load balancer
+
+Costo: ~$250/mes
+```
+
+**Fase 3 (101-200 LANs):**
+```
+Horizontal scaling:
+- 3x App servers (behind load balancer)
+- PostgreSQL read replicas
+- Redis cluster
+- Kubernetes para orquestación
+
+Costo: ~$800/mes
+```
+
+**Fase 4 (200+ LANs):**
+```
+Multi-region:
+- CDN para assets estáticos
+- Regional databases
+- Edge caching
+- Microservices separation (opcional)
+
+Costo: ~$2,000/mes
+```
+
+---
+
+## 9. MONITOREO Y OBSERVABILIDAD
+
+### 9.1 Métricas Críticas a Monitorear
+
+**Application Metrics:**
+```
+- Request latency (p50, p95, p99)
+- Error rate (por endpoint)
+- WebSocket connections activas
+- Sessions activas totales
+- Queue depth (BullMQ jobs pending)
+- Cache hit rate (Redis)
+```
+
+**Business Metrics:**
+```
+- Ingresos por hora
+- Sesiones por LAN
+- Tasa de ocupación por zona
+- Average session duration
+- Productos más vendidos
+- Churn rate de clientes
+```
+
+**Infrastructure Metrics:**
+```
+- CPU/RAM usage (app servers)
+- Database connections pool
+- Disk I/O
+- Network bandwidth
+- Container restarts
+```
+
+### 9.2 Stack de Monitoreo
+```
+Prometheus → Scrape metrics cada 15s
+Grafana → Visualización de dashboards
+Loki → Logs centralizados
+AlertManager → Alertas (Slack, email)
+Sentry → Error tracking (frontend + backend)
+Uptime Robot → External monitoring (uptime checks)
+```
+
+### 9.3 Alertas Críticas
+```
+CRITICAL (Slack + SMS):
+- API down >2 min
+- Database unavailable
+- >50% agents offline
+- Error rate >5%
+
+WARNING (Slack):
+- High latency (p95 >500ms)
+- Database connections >80% pool
+- Disk space <20%
+- Memory >85%
+
+INFO (Email):
+- Nuevos LANs onboarded
+- Daily revenue report
+- Capacity planning warnings
+```
+
+---
+
+## 10. PLAN DE DEPLOYMENT
+
+### 10.1 Environments
+```
+DEVELOPMENT (local):
+- Docker Compose
+- Cada dev tiene su stack completo
+- Mock data para testing
+
+STAGING:
+- Replica de producción
+- Deploy automático de main branch
+- Testing pre-production
+- Datos sintéticos realistas
+
+PRODUCTION:
+- Deploy manual (con aprobación)
+- Blue-green deployment
+- Rollback inmediato si problemas
+- Datos reales
+```
+
+### 10.2 CI/CD Pipeline
+```
+GitHub Actions workflow:
+
+[Push a feature branch]
+→ Run linters (ESLint, cargo clippy)
+→ Run tests (unit + integration)
+→ Build artifacts
+→ Si pasa → allow merge to main
+
+[Merge to main]
+→ Run full test suite
+→ Build Docker images
+→ Push to registry
+→ Deploy to STAGING automáticamente
+→ Run smoke tests
+→ Notificar en Slack: "Staging deployed"
+
+[Release to PRODUCTION]
+→ Manual approval required
+→ Create release tag (v1.2.3)
+→ Deploy to production
+→ Health checks
+→ Si falla → automatic rollback
+→ Notificar en Slack: "Prod deployed v1.2.3"
+```
+
+### 10.3 Database Migrations
+```
+Estrategia:
+- Prisma Migrate para schema changes
+- Migrations versionadas en Git
+- Deploy process:
+  1. Backup database
+  2. Run migrations (con timeout)
+  3. Verify data integrity
+  4. Deploy new app version
+  5. Si falla → rollback migration + app
+  
+Migrations peligrosas:
+- Dropping columns → requiere 2-phase deploy
+  Fase 1: App deja de usar columna
+  Fase 2 (semanas después): Drop columna
+```
+
+---
+
+## 11. COSTOS PROYECTADOS (Detallado)
+
+### 11.1 Desarrollo (Año 1)
+```
+PERSONAL:
+├─ 1x Tech Lead (Rust + Node.js)
+│  └─ $5,000/mes × 12 = $60,000
+│
+├─ 1x Full-stack Dev (Node.js + React)
+│  └─ $4,000/mes × 12 = $48,000
+│
+├─ 0.5x Frontend Dev (Next.js + Flutter)
+│  └─ $3,500/mes × 6 = $21,000
+│
+├─ 0.5x QA Engineer
+│  └─ $2,500/mes × 6 = $15,000
+│
+└─ 0.25x UI/UX Designer (freelance)
+   └─ $2,000/mes × 3 = $6,000
+
+TOTAL PERSONAL: $150,000
+```
+
+### 11.2 Infraestructura (Año 1)
+```
+CLOUD (AWS / DigitalOcean):
+├─ VPS (8 vCPU, 16GB) × 12 = $960
+├─ PostgreSQL managed × 12 = $1,800
+├─ Redis managed × 12 = $600
+├─ S3/MinIO storage × 12 = $240
+├─ CDN (Cloudflare) × 12 = $240
+└─ Backup storage × 12 = $180
+
+SERVICES:
+├─ Domain + SSL = $50
+├─ Sentry (error tracking) × 12 = $300
+├─ Monitoring (Grafana Cloud) × 12 = $600
+├─ Email service (SendGrid) × 12 = $180
+├─ SMS (Twilio) × 12 = $600
+└─ Payment gateway fees (2.9% + $0.30)
+   └─ Estimado: $1,200
+
+TOTAL INFRA: $6,950
+```
+
+### 11.3 Marketing & Legal (Año 1)
+```
+MARKETING:
+├─ Landing page design = $2,000
+├─ Brand identity = $1,500
+├─ Content marketing × 12 = $6,000
+├─ Ads (Google/Meta) × 12 = $6,000
+└─ Video demos/tutorials = $3,000
+
+LEGAL & ADMIN:
+├─ Company registration = $1,000
+├─ Lawyer (contracts, ToS) = $2,500
+├─ Accountant × 12 = $3,600
+└─ Insurance = $1,500
+
+TOTAL MARKETING + LEGAL: $27,100
+```
+
+### 11.4 Total Año 1
+```
+Personal:       $150,000
+Infraestructura:  $6,950
+Marketing/Legal: $27,100
+─────────────────────────
+TOTAL:          $184,050
+
+Con 20% buffer para imprevistos: ~$220,000
+```
+
+---
+
+## 12. MODELO DE MONETIZACIÓN (Detallado)
+
+### 12.1 Pricing Tiers
+```
+┌─────────────────────────────────────────────────────┐
+│  STARTER                                     $49/mes │
+├─────────────────────────────────────────────────────┤
+│  • Hasta 15 PCs                                     │
+│  • Core features (sessions, billing, users)          │
+│  • 1 zona                                           │
+│  • 2 usuarios admin                                 │
+│  • Email support (48h response)                     │
+│  • Reports básicos                                  │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│  PROFESSIONAL                               $129/mes │
+├─────────────────────────────────────────────────────┤
+│  • Hasta 40 PCs                                     │
+│  • Todo de Starter +                                │
+│  • Tienda integrada                                 │
+│  • Sistema de reservas                              │
+│  • Zonas ilimitadas                                 │
+│  • 5 usuarios admin                                 │
+│  • Loyalty program                                  │
+│  • Chat support (24h response)                      │
+│  • Reports avanzados + exports                      │
+│  • Mobile app                                       │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│  BUSINESS                                   $299/mes │
+├─────────────────────────────────────────────────────┤
+│  • Hasta 80 PCs                                     │
+│  • Todo de Professional +                           │
+│  • Analytics con IA (pricing, forecasting)          │
+│  • Tournament manager                               │
+│  • API access                                       │
+│  • Usuarios admin ilimitados                        │
+│  • Multi-ubicación (hasta 3 sucursales)             │
+│  • Priority support (12h response)                  │
+│  • White-label (remove eControl branding)           │
+│  • Custom integrations                              │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│  ENTERPRISE                             Custom price │
+├─────────────────────────────────────────────────────┤
+│  • PCs ilimitadas                                   │
+│  • Todo de Business +                               │
+│  • Dedicated support (4h response)                  │
+│  • On-premise deployment option                     │
+│  • SLA 99.9% uptime guaranteed                      │
+│  • Custom features development                      │
+│  • Multi-ubicación ilimitada                        │
+│  • Training & onboarding personalizado              │
+└─────────────────────────────────────────────────────┘
+```
+
+### 12.2 Ingresos Proyectados
+```
+ESCENARIO CONSERVADOR (Año 1):
+
+Mes 1-3 (Beta):
+- 5 clientes × $0 (gratis) = $0
+
+Mes 4-6:
+- 10 clientes × $49 (Starter) = $490/mes
+
+Mes 7-9:
+- 20 clientes × $70 (mix tiers) = $1,400/mes
+
+Mes 10-12:
+- 35 clientes × $85 (mix tiers) = $2,975/mes
+
+Total Año 1: ~$20,000 MRR final → ~$85,000 ARR acumulado
+
+───────────────────────────────────────────────────
+
+ESCENARIO OPTIMISTA (Año 1):
+
+Mes 1-3: $0
+Mes 4-6: 25 clientes × $60 = $1,500/mes
+Mes 7-9: 60 clientes × $75 = $4,500/mes
+Mes 10-12: 100 clientes × $90 = $9,000/mes
+
+Total Año 1: $9,000 MRR final → $190,000 ARR acumulado
+
+───────────────────────────────────────────────────
+
+ESCENARIO REALISTA (entre ambos):
+
+Año 1: ~$130,000 ingresos totales
+Año 2: ~$450,000 (150 clientes × $250 MRR promedio)
+
+Break-even: Mes 18-20
+```
+
+---
+
+## 13. ROADMAP CONSOLIDADO
+
+### 13.1 Pre-Development (Mes 0)
+```
+SEMANA 1-2: Validación
+├─ Entrevistar 15 dueños de LANs
+├─ Survey online (50+ respuestas)
+├─ Competitive analysis profundo
+└─ Validar willingness to pay
+
+SEMANA 3-4: Diseño
+├─ Wireframes (Figma)
+├─ User flows completos
+├─ Database schema final
+├─ API contracts (OpenAPI spec)
+└─ Decisión de financiamiento
+```
+
+### 13.2 MVP Development (Mes 1-6)
+```
+MES 1: Foundation
+├─ Setup monorepo
+├─ CI/CD pipelines
+├─ Docker Compose dev environment
+├─ Database schema (Prisma)
+├─ Auth system (JWT)
+└─ Rust Agent scaffold
+
+MES 2-3: Core Agent
+├─ Windows Service funcional
+├─ Session timer local
+├─ SQLite offline storage
+├─ WebSocket client
+├─ Process monitoring
+└─ Kiosk mode básico
+
+MES 3-4: Backend Core
+├─ Sessions API (CRUD)
+├─ Users API (CRUD)
+├─ PCs API (CRUD)
+├─ WebSocket gateway
+├─ Billing engine
+└─ Basic reports
+
+MES 4-5: Dashboard MVP
+├─ Next.js setup
+├─ Authentication
+├─ PC map (real-time status)
+├─ Start/end sessions
+├─ User management
+└─ Daily reports (X, Z)
+
+MES 5-6: Tauri UI
+├─ System tray app
+├─ Session overlay
+├─ Extend time functionality
+├─ API integration
+└─ Polish & testing
+
+DELIVERABLE Mes 6: 
+✅ MVP funcional para 3 beta testers
+```
+
+### 13.3 Beta & Iteration (Mes 7-9)
+```
+MES 7:
+├─ Onboard 5 beta LANs
+├─ Gathering feedback
+├─ Bug fixing sprint
+└─ Performance optimization
+
+MES 8:
+├─ Reservations system
+├─ Integrated store
+├─ Mobile app (Flutter) MVP
+└─ Email/SMS notifications
+
+MES 9:
+├─ Loyalty program
+├─ Advanced reports
+├─ Payment integrations (Stripe, Mercado Pago)
+└─ Polish UI/UX based on feedback
+```
+
+### 13.4 Launch (Mes 10-12)
+```
+MES 10:
+├─ Public launch
+├─ Marketing campaign
+├─ Landing page optimized
+├─ Documentation completa
+└─ Video tutorials
+
+MES 11-12:
+├─ Scale infrastructure
+├─ Customer success efforts
+├─ Feature requests prioritization
+└─ Prepare for Año 2 features
+```
+
+### 13.5 Year 2 Features
+```
+Q1 (Mes 13-15):
+└─ Analytics AI (dynamic pricing, forecasting)
+
+Q2 (Mes 16-18):
+└─ Tournament manager
+
+Q3 (Mes 19-21):
+└─ API pública + marketplace de plugins
+
+Q4 (Mes 22-24):
+└─ Multi-ubicación
+└─ White-label option
+```
+
+---
+
+## 14. RIESGOS Y MITIGACIONES (Consolidado)
+
+### 14.1 Técnicos
+
+| Riesgo | Probabilidad | Impacto | Mitigación |
+|--------|--------------|---------|------------|
+| Agent crashea PCs de clientes | Media | CRÍTICO | Testing exhaustivo en 20+ configs de hardware antes de launch. Rollback automático. |
+| Sync offline-online pierde datos | Media | Alto | Idempotent APIs. Transaction log con checksums. Testing de desconexiones. |
+| Escalabilidad: backend colapsa con 100+ LANs | Media | Alto | Load testing desde Mes 6. Horizontal scaling preparado. Caching agresivo. |
+| Hack de base de datos | Baja | CRÍTICO | Encryption at rest. RBAC estricto. Pentesting antes de launch. Compliance con PCI-DSS para pagos. |
+| Windows updates rompen Agent | Alta | Medio | Compatibility layer. Monitoring de versiones Windows. Auto-update del Agent. |
+
+### 14.2 Mercado
+
+| Riesgo | Probabilidad | Impacto | Mitigación |
+|--------|--------------|---------|------------|
+| Competidores reducen precio a $0 (freemium) | Alta | Alto | Diferenciarse por UX, features únicos (IA, modo offline robusto). Customer success. |
+| Adopción lenta (LANs prefieren Excel) | Alta | CRÍTICO | Freemium tier (15 PCs gratis). Onboarding en <2h. ROI calculator en landing. |
+| Cloud gaming mata LANs físicos | Media | Alto | Pivotar a modelo híbrido. LANs como "esports hubs". Eventos sociales. |
+| Regulación (GDPR, protección menor) | Baja | Medio | Compliance desde día 1. Consultor legal. Parental controls. |
+
+### 14.3 Financieros
+
+| Riesgo | Probabilidad | Impacto | Mitigación |
+|--------|--------------|---------|------------|
+| No alcanzar break-even en 24 meses | Media | CRÍTICO | Buscar seed funding ($150-250k). Reducir burn rate (equipo offshore). Revenue share model alternativo. |
+| Churn rate >10%/mes | Media | Alto | Customer success proactivo. NPS tracking. Feature requests rápidos. |
+| Costos de infra explotan | Baja | Medio | Monitoring de costos. Optimización continua. Reserved instances. |
+| Falta de capital para marketing | Alta | Alto | Growth hacking. Content marketing (SEO). Referral program. Community building. |
+
+---
+
+## 15. MÉTRICAS DE ÉXITO (KPIs Definitivos)
+
+### 15.1 Product Metrics
+```
+MVP (Mes 6):
+├─ 3 beta LANs usando el producto
+├─ 95% uptime
+├─ <5 bugs críticos reportados
+└─ Agent footprint <50 MB RAM
+
+Launch (Mes 12):
+├─ 50 LANs pagando
+├─ 99% uptime
+├─ NPS >30
+├─ Avg session start time <30 segundos
+└─ Churn rate <8%/mes
+
+Año 2:
+├─ 200 LANs activos
+├─ 99.5% uptime
+├─ NPS >50
+└─ Churn rate <5%/mes
+```
+
+### 15.2 Business Metrics
+```
+Mes 12:
+├─ MRR: $4,000
+├─ ARR: ~$130,000
+├─ CAC: <$200
+├─ LTV: >$2,000
+└─ LTV:CAC ratio: >10:1
+
+Año 2:
+├─ MRR: $37,500 (150 LANs × $250 avg)
+├─ ARR: $450,000
+├─ CAC: <$150
+├─ LTV: >$3,500
+├─ LTV:CAC ratio: >23:1
+└─ Gross margin: 80%+
+```
+
+### 15.3 Technical Metrics
+```
+Performance:
+├─ API p95 latency: <200ms
+├─ Dashboard load time: <2s
+├─ Agent startup: <3s
+└─ WebSocket reconnect: <5s
+
+Reliability:
+├─ Error rate: <0.1%
+├─ Failed deployments: <5%
+└─ Mean time to recovery: <15 min
+
+Adoption:
+├─ % LANs using mobile app: >40%
+├─ % sessions with store purchases: >25%
+└─ % clients with loyalty account: >60%
+```
+
+---
+
+## 16. DECISIONES PENDIENTES
+
+### 16.1 Preguntas que Resolver AHORA
+```
+1. FINANCIAMIENTO:
+   ¿Bootstrapping o buscar inversión?
+   └─ Si inversión: ¿Cuánto? ¿Angels o VC?
+
+2. TEAM:
+   ¿In-house o offshore?
+   └─ Si offshore: ¿Qué región? (LATAM, Eastern Europe, Asia)
+
+3. PRICING:
+   ¿Revenue share o SaaS puro?
+   └─ ¿Tier gratis o solo trial?
+
+4. MERCADO INICIAL:
+   ¿Un solo país o regional desde día 1?
+   └─ ¿Qué país? (Perú, México, Colombia, Chile?)
+
+5. TECH:
+   ¿Self-hosted option desde MVP o solo cloud?
+   └─ Algunos LANs grandes pueden querer on-premise
+```
+
+### 16.2 Decisiones para Mes 3-6
+```
+1. Payment gateways específicos por país
+2. Compliance regional (facturación electrónica)
+3. Contratar customer success person
+4. Estrategia de partnerships (hardware vendors)
+```
+
+---
+
+## 17. SIGUIENTE PASO INMEDIATO
+
+### Si apruebas este plan, lo siguiente es:
+```
+FASE 0: VALIDACIÓN (2 semanas)
+┌────────────────────────────────────────────────┐
+│ Día 1-3:                                       │
+│ └─ Crear lista de 50 LANs para entrevistar    │
+│                                                │
+│ Día 4-10:                                      │
+│ └─ Hacer 15 entrevistas (30 min c/u)          │
+│    Preguntas:                                  │
+│    • ¿Qué software usan hoy?                   │
+│    • ¿Qué les frustra?                         │
+│    • ¿Pagarían $50-150/mes por solución?       │
+│    • ¿Qué features son must-have?              │
+│                                                │
+│ Día 11-14:                                     │
+│ └─ Análisis de entrevistas                     │
+│ └─ Ajustar roadmap según feedback              │
+│ └─ Decidir: GO / NO-GO / PIVOT                 │
+└────────────────────────────────────────────────┘
+
+Si GO → Arrancar Mes 1 del roadmap
+Si NO-GO → Iterar o pivotar
+Si PIVOT → Redefinir y volver a validar
+```
+
+---
+
+## 18. DOCUMENTOS A CREAR POST-APROBACIÓN
+```
+1. Technical Specification Document (TSD)
+   └─ 50-80 páginas de specs técnicas detalladas
+
+2. API Documentation (OpenAPI)
+   └─ Todos los endpoints documentados
+
+3. Database Schema (ERD completo)
+   └─ Con constraints, índices, relaciones
+
+4. UI/UX Design System
+   └─ Figma con todos los componentes
+
+5. Business Plan Ejecutivo
+   └─ Para pitch a inversionistas
+
+6. User Manual (Draft)
+   └─ Para beta testers
+
+7. Marketing Plan
+   └─ Go-to-market strategy detallada
+```
+
+---
+
+## RESUMEN EJECUTIVO FINAL
+```
+┌──────────────────────────────────────────────────────────┐
+│  ECONTROL: DECISIONES CLAVE                               │
+└──────────────────────────────────────────────────────────┘
+
+STACK:
+✓ Agent: Rust Service + Tauri UI
+✓ Backend: Node.js + NestJS
+✓ Admin: Next.js 14 (App Router)
+✓ Mobile: Flutter
+✓ Database: PostgreSQL + Redis
+
+ARQUITECTURA:
+✓ Monorepo (pnpm workspaces)
+✓ Microservicios (NestJS modules)
+✓ Modo offline robusto (SQLite sync)
+✓ Real-time (WebSockets)
+
+MODELO NEGOCIO:
+✓ SaaS subscription ($49-$299/mes)
+✓ 4 tiers (Starter → Enterprise)
+✓ Freemium considerado (hasta 10 PCs)
+
+TIMELINE:
+✓ MVP: 6 meses
+✓ Beta: Mes 7-9
+✓ Launch: Mes 10
+✓ Break-even: Mes 18-20
+
+INVERSIÓN:
+✓ Año 1: ~$220k (con buffer)
+✓ Financiamiento: TBD (bootstrapping vs seed)
+
+MÉTRICAS ÉXITO:
+✓ Mes 12: 50 LANs, $4k MRR
+✓ Año 2: 200 LANs, $37k MRR
+
+RIESGO MAYOR:
+✓ Ado

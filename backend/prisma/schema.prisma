@@ -1,0 +1,575 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USUARIOS Y AUTENTICACIÓN
+// ============================================
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  username       String         @unique
+  passwordHash   String         @map("password_hash")
+  phone          String?
+  balance        Decimal        @default(0) @db.Decimal(10, 2)
+  loyaltyPoints  Int            @default(0) @map("loyalty_points")
+  membershipTier MembershipTier @default(BRONZE) @map("membership_tier")
+  role           UserRole       @default(CLIENT)
+
+  // Campos de aprobación (para LAN_ADMIN)
+  approvalStatus  ApprovalStatus @default(APPROVED) @map("approval_status")
+  approvedBy      String?        @map("approved_by")
+  approvedByUser  User?          @relation("ApprovedUsers", fields: [approvedBy], references: [id])
+  approvedAt      DateTime?      @map("approved_at")
+  rejectedAt      DateTime?      @map("rejected_at")
+  rejectionReason String?        @map("rejection_reason")
+  requestedLanData Json?         @map("requested_lan_data")
+  
+  // LAN Center gestionado (para LAN_ADMIN)
+  managedLanId String?     @map("managed_lan_id")
+  managedLan   LANCenter? @relation("ManagedLan", fields: [managedLanId], references: [id])
+  
+  // LAN Center de registro (para Jugadores)
+  homeLanId    String?     @map("home_lan_id")
+  homeLan      LANCenter?  @relation("HomeLan", fields: [homeLanId], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  lastVisit DateTime? @map("last_visit")
+
+  // Control de Sesión Única
+  activePcId String? @unique @map("active_pc_id")
+  activePc   PC?     @relation("ActiveUserSession", fields: [activePcId], references: [id])
+
+  // Relaciones
+  ownedLANs         LANCenter[]     @relation("LANOwner")
+  approvedUsers     User[]          @relation("ApprovedUsers")
+  lanStaff          LANStaff[]
+  sessions          Session[]
+  reservations      Reservation[]
+  orders            Order[]
+  transactions      Transaction[]
+  rewards           LoyaltyReward[]
+  adminActions      ApprovalLog[]   @relation("AdminActions")
+  targetUserActions ApprovalLog[]   @relation("TargetUserActions")
+
+  @@map("users")
+}
+
+enum UserRole {
+  CLIENT
+  STAFF
+  LAN_ADMIN
+  SUPER_ADMIN
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MembershipTier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+// ============================================
+// LAN CENTERS (MULTI-TENANT)
+// ============================================
+
+model LANCenter {
+  id       String @id @default(uuid())
+  name     String
+  slug     String @unique
+  apiKey   String @unique @default(uuid()) @map("api_key")
+  address  String
+  city     String
+  country  String
+  timezone String @default("America/Lima")
+
+  ownerId String
+  owner   User   @relation("LANOwner", fields: [ownerId], references: [id])
+
+  settings Json      @default("{}")
+  status   LANStatus @default(TRIAL)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  admins       User[]          @relation("ManagedLan")
+  homeUsers    User[]          @relation("HomeLan")
+  zones        Zone[]
+  staff        LANStaff[]
+  sessions     Session[]
+  products     Product[]
+  orders       Order[]
+  reservations Reservation[]
+  subscription Subscription?
+
+  @@map("lan_centers")
+}
+
+enum LANStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+// ============================================
+// STAFF DE UN LAN CENTER
+// ============================================
+
+model LANStaff {
+  id String @id @default(uuid())
+
+  lanId String
+  lan   LANCenter @relation(fields: [lanId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  role UserRole
+
+  startedAt DateTime  @default(now()) @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+
+  @@unique([lanId, userId])
+  @@map("lan_staff")
+}
+
+// ============================================
+// ZONAS Y COMPUTADORAS
+// ============================================
+
+model Zone {
+  id    String    @id @default(uuid())
+  lanId String    @map("lan_id")
+  lan   LANCenter @relation(fields: [lanId], references: [id])
+
+  name        String
+  description String?
+  baseRate    Decimal @map("base_rate") @db.Decimal(10, 2)
+
+  position Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  pcs           PC[]
+  rateSchedules RateSchedule[]
+  bundles       Bundle[]
+
+  @@map("zones")
+}
+
+model RateSchedule {
+  id     String @id @default(uuid())
+  zoneId String @map("zone_id")
+  zone   Zone   @relation(fields: [zoneId], references: [id])
+
+  minutes  Int
+  price    Decimal @db.Decimal(10, 2)
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([zoneId, minutes])
+  @@map("rate_schedules")
+}
+
+model Bundle {
+  id     String @id @default(uuid())
+  zoneId String @map("zone_id")
+  zone   Zone   @relation(fields: [zoneId], references: [id])
+
+  name       String
+  minutes    Int
+  price      Decimal @db.Decimal(10, 2)
+  isSaveable Boolean @default(false) @map("is_saveable")
+  isActive   Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("bundles")
+}
+
+
+model PC {
+  id     String @id @default(uuid())
+  zoneId String @map("zone_id")
+  zone   Zone   @relation(fields: [zoneId], references: [id])
+
+  name   String
+  specs  Json     @default("{}")
+  status PCStatus @default(AVAILABLE)
+
+  macAddress    String?   @unique @map("mac_address")
+  ipAddress     String?   @map("ip_address")
+  agentVersion  String?   @map("agent_version")
+  lastHeartbeat DateTime? @map("last_heartbeat")
+  
+  positionX     Float?    @map("pos_x")
+  positionY     Float?    @map("pos_y")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  sessions        Session[]
+  reservations    Reservation[]
+  maintenanceLogs MaintenanceLog[]
+  activeUser      User?            @relation("ActiveUserSession")
+
+  @@map("pcs")
+}
+
+enum PCStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+  OFFLINE
+  MALICIOUS
+}
+
+// ============================================
+// SESIONES DE JUEGO
+// ============================================
+
+model Session {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  pcId String @map("pc_id")
+  pc   PC     @relation(fields: [pcId], references: [id])
+
+  lanId String    @map("lan_id")
+  lan   LANCenter @relation(fields: [lanId], references: [id])
+
+  startedAt       DateTime  @default(now()) @map("started_at")
+  endedAt         DateTime? @map("ended_at")
+  durationSeconds Int       @default(0) @map("duration_seconds")
+
+  ratePerMinute Decimal @map("rate_per_minute") @db.Decimal(10, 4)
+  totalCost     Decimal @default(0) @map("total_cost") @db.Decimal(10, 2)
+
+  status        SessionStatus @default(ACTIVE)
+  paymentMethod String?       @map("payment_method")
+
+  expiresAt     DateTime?     @map("expires_at")
+  isPaid        Boolean       @default(false) @map("is_paid")
+  pricingType   String?       @map("pricing_type")
+
+  // Relaciones
+  transactions Transaction[]
+  orders       Order[]
+
+  @@index([userId, startedAt])
+  @@index([pcId, status])
+  @@index([lanId, startedAt])
+  @@map("sessions")
+}
+
+enum SessionStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABORTED
+}
+
+// ============================================
+// RESERVAS
+// ============================================
+
+model Reservation {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  pcId String @map("pc_id")
+  pc   PC     @relation(fields: [pcId], references: [id])
+
+  lanId String    @map("lan_id")
+  lan   LANCenter @relation(fields: [lanId], references: [id])
+
+  reservedFor     DateTime @map("reserved_for")
+  durationMinutes Int      @map("duration_minutes")
+
+  depositAmount Decimal @map("deposit_amount") @db.Decimal(10, 2)
+  totalCost     Decimal @map("total_cost") @db.Decimal(10, 2)
+
+  status             ReservationStatus @default(PENDING)
+  cancellationReason String?           @map("cancellation_reason")
+  penaltyApplied     Decimal?          @map("penalty_applied") @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([pcId, reservedFor])
+  @@index([userId, reservedFor])
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ============================================
+// PRODUCTOS Y ÓRDENES
+// ============================================
+
+model Product {
+  id    String    @id @default(uuid())
+  lanId String    @map("lan_id")
+  lan   LANCenter @relation(fields: [lanId], references: [id])
+
+  name        String
+  category    String
+  description String?
+  price       Decimal @db.Decimal(10, 2)
+  cost        Decimal @db.Decimal(10, 2)
+  stock       Int     @default(0)
+  imageUrl    String? @map("image_url")
+
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  sessionId String?  @map("session_id")
+  session   Session? @relation(fields: [sessionId], references: [id])
+
+  lanId String    @map("lan_id")
+  lan   LANCenter @relation(fields: [lanId], references: [id])
+
+  totalAmount Decimal     @map("total_amount") @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING)
+
+  orderedAt   DateTime  @default(now()) @map("ordered_at")
+  deliveredAt DateTime? @map("delivered_at")
+
+  // Relaciones
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id String @id @default(uuid())
+
+  orderId String @map("order_id")
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity  Int
+  unitPrice Decimal @map("unit_price") @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  @@map("order_items")
+}
+
+// ============================================
+// TRANSACCIONES FINANCIERAS
+// ============================================
+
+model Transaction {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  lanId String @map("lan_id")
+
+  type TransactionType
+
+  amount        Decimal @db.Decimal(10, 2)
+  balanceBefore Decimal @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter  Decimal @map("balance_after") @db.Decimal(10, 2)
+
+  paymentMethod String? @map("payment_method")
+  reference     String?
+  description   String?
+
+  sessionId String?  @map("session_id")
+  session   Session? @relation(fields: [sessionId], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  RECHARGE
+  SESSION_PAYMENT
+  STORE_PURCHASE
+  REFUND
+  PENALTY
+}
+
+// ============================================
+// LOYALTY Y RECOMPENSAS
+// ============================================
+
+model LoyaltyReward {
+  id String @id @default(uuid())
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+
+  type      LoyaltyType
+  value     Decimal     @db.Decimal(10, 2)
+  expiresAt DateTime?   @map("expires_at")
+
+  status RewardStatus @default(PENDING)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("loyalty_rewards")
+}
+
+enum LoyaltyType {
+  CASHBACK
+  FREE_HOURS
+  DISCOUNT_COUPON
+}
+
+enum RewardStatus {
+  PENDING
+  REDEEMED
+  EXPIRED
+}
+
+// ============================================
+// MANTENIMIENTO
+// ============================================
+
+model MaintenanceLog {
+  id String @id @default(uuid())
+
+  pcId String @map("pc_id")
+  pc   PC     @relation(fields: [pcId], references: [id])
+
+  performedBy String? @map("performed_by")
+
+  issue  String
+  action String
+  cost   Decimal? @db.Decimal(10, 2)
+
+  performedAt DateTime @default(now()) @map("performed_at")
+
+  @@map("maintenance_logs")
+}
+
+// ============================================
+// SUSCRIPCIONES
+// ============================================
+
+model Subscription {
+  id String @id @default(uuid())
+
+  lanId String    @unique @map("lan_id")
+  lan   LANCenter @relation(fields: [lanId], references: [id])
+
+  plan               String
+  status             SubscriptionStatus
+  currentPeriodStart DateTime           @map("current_period_start")
+  currentPeriodEnd   DateTime           @map("current_period_end")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIAL
+}
+
+// ============================================
+// AUDIT LOG - APROBACIONES
+// ============================================
+
+model ApprovalLog {
+  id String @id @default(uuid())
+
+  // Quién realizó la acción
+  adminId String @map("admin_id")
+  admin   User   @relation("AdminActions", fields: [adminId], references: [id])
+
+  // Sobre quién se realizó la acción
+  targetUserId String @map("target_user_id")
+  targetUser   User   @relation("TargetUserActions", fields: [targetUserId], references: [id])
+
+  // Datos de la acción
+  action           ApprovalAction // APPROVED | REJECTED
+  reason           String?        // Razón de rechazo (si aplica)
+  requestedLanData Json?          @map("requested_lan_data") // Snapshot del LAN data
+
+  // Metadata
+  createdAt DateTime @default(now()) @map("created_at")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+
+  @@index([adminId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("approval_logs")
+}
+
+enum ApprovalAction {
+  APPROVED
+  REJECTED
+}
+

@@ -1,0 +1,57 @@
+Nombre de registro:Application
+Origen:        agent-master
+Fecha:         28/12/2025 16:13:56
+Id. del evento:0
+Categoría de la tarea:Ninguno
+Nivel:         Error
+Palabras clave:Clásico
+Usuario:       No disponible
+Equipo:        PC04
+Descripción:
+Category: eControl.Agent.Master.Worker
+EventId: 0
+
+Error in Pipe Server loop
+
+Exception: 
+System.OperationCanceledException: The operation was canceled.
+   at System.IO.Pipes.PipeStream.PipeValueTaskSource.GetResult(Int16 token)
+   at System.IO.Pipes.PipeStream.PipeValueTaskSource.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.<>c.<.cctor>b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at eControl.Agent.Master.Services.PipeServerService.ServerLoop(CancellationToken token) in C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\Services\PipeServerService.cs:line 62
+
+XML de evento:
+<Event xmlns="http://schemas.microsoft.com/win/2004/08/events/event">
+  <System>
+    <Provider Name="agent-master" />
+    <EventID Qualifiers="0">0</EventID>
+    <Version>0</Version>
+    <Level>2</Level>
+    <Task>0</Task>
+    <Opcode>0</Opcode>
+    <Keywords>0x80000000000000</Keywords>
+    <TimeCreated SystemTime="2025-12-28T21:13:56.6293381Z" />
+    <EventRecordID>2394</EventRecordID>
+    <Correlation />
+    <Execution ProcessID="0" ThreadID="0" />
+    <Channel>Application</Channel>
+    <Computer>PC04</Computer>
+    <Security />
+  </System>
+  <EventData>
+    <Data>Category: eControl.Agent.Master.Worker
+EventId: 0
+
+Error in Pipe Server loop
+
+Exception: 
+System.OperationCanceledException: The operation was canceled.
+   at System.IO.Pipes.PipeStream.PipeValueTaskSource.GetResult(Int16 token)
+   at System.IO.Pipes.PipeStream.PipeValueTaskSource.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)
+   at System.Threading.Tasks.ValueTask.ValueTaskSourceAsTask.&lt;&gt;c.&lt;.cctor&gt;b__4_0(Object state)
+--- End of stack trace from previous location ---
+   at eControl.Agent.Master.Services.PipeServerService.ServerLoop(CancellationToken token) in C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\Services\PipeServerService.cs:line 62
+</Data>
+  </EventData>
+</Event>

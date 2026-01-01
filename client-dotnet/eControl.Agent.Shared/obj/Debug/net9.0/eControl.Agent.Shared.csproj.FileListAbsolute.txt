@@ -1,0 +1,12 @@
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\bin\Debug\net9.0\eControl.Agent.Shared.deps.json
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\bin\Debug\net9.0\eControl.Agent.Shared.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\bin\Debug\net9.0\eControl.Agent.Shared.pdb
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.csproj.AssemblyReference.cache
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.AssemblyInfoInputs.cache
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.AssemblyInfo.cs
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.csproj.CoreCompileInputs.cache
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\refint\eControl.Agent.Shared.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.pdb
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\ref\eControl.Agent.Shared.dll
