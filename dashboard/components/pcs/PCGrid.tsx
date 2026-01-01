@@ -24,7 +24,8 @@ export function PCGrid({ zoneId, lanId, zones }: PCGridProps) {
 
     useEffect(() => {
         // Usar el host actual para conectar el socket (útil si se accede por IP en red local)
-        const socketUrl = `http://${window.location.hostname}:3001/pcs`;
+        const serverUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const socketUrl = `${serverUrl}/pcs`;
         const socket = io(socketUrl);
 
         socket.on('connect', () => {

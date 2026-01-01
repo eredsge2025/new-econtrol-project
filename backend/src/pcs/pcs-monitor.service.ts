@@ -71,7 +71,8 @@ export class PcsMonitorService implements OnModuleInit {
                 activeUser: true,
                 sessions: {
                     where: { status: { in: ['ACTIVE', 'PAUSED'] } },
-                    take: 1
+                    take: 1,
+                    include: { transactions: { orderBy: { createdAt: 'desc' } } }
                 }
             },
         });

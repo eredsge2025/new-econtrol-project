@@ -256,8 +256,8 @@ enum PCStatus {
 model Session {
   id String @id @default(uuid())
 
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
 
   pcId String @map("pc_id")
   pc   PC     @relation(fields: [pcId], references: [id])
@@ -422,8 +422,8 @@ model OrderItem {
 model Transaction {
   id String @id @default(uuid())
 
-  userId String @map("user_id")
-  user   User   @relation(fields: [userId], references: [id])
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id])
 
   lanId String @map("lan_id")
 

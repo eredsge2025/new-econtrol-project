@@ -43,7 +43,8 @@ export class PcsService {
                 activeUser: true, // Incluimos el usuario activo si lo hay
                 sessions: {
                     where: { status: { in: ['ACTIVE', 'PAUSED'] } },
-                    take: 1
+                    take: 1,
+                    include: { transactions: { orderBy: { createdAt: 'desc' } } }
                 },
             },
         });
@@ -72,6 +73,11 @@ export class PcsService {
                     },
                 },
                 activeUser: true,
+                sessions: {
+                    where: { status: { in: ['ACTIVE', 'PAUSED'] } },
+                    take: 1,
+                    include: { transactions: { orderBy: { createdAt: 'desc' } } }
+                },
             },
         });
 
