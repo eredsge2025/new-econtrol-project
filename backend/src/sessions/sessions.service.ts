@@ -299,8 +299,8 @@ export class SessionsService {
         });
 
         if (!session) throw new NotFoundException('Sesión no encontrada');
-        if (session.status !== 'ACTIVE' && session.status !== 'PAUSED') {
-            throw new BadRequestException('Solo se pueden extender sesiones activas o pausadas');
+        if (session.status !== 'ACTIVE' && session.status !== 'PAUSED' && session.status !== 'EXPIRED') {
+            throw new BadRequestException('Solo se pueden extender sesiones activas, pausadas o expiradas');
         }
 
         // 2. Validate Pricing/Cost
@@ -398,30 +398,32 @@ export class SessionsService {
 
             // Calculate New Expiration
             let newExpiresAt = session.expiresAt;
-            let newDuration = session.durationSeconds; // For Pending
-            let updateData: any = {
-                totalCost: { increment: cost }
-            };
+            const now = new Date();
 
-            if (session.status === 'PAUSED') {
-                // Just add to duration buffer
-                newDuration += (addedMinutes * 60);
-                updateData.durationSeconds = newDuration;
-            } else if (session.status === 'ACTIVE') {
-                if (session.expiresAt) {
-                    newExpiresAt = new Date(session.expiresAt.getTime() + (addedMinutes * 60 * 1000));
-                    updateData.expiresAt = newExpiresAt;
-                } else {
-                    const now = new Date();
-                    newExpiresAt = new Date(now.getTime() + (addedMinutes * 60 * 1000));
-                    updateData.expiresAt = newExpiresAt;
-                }
+            // If session is EXPIRED, we start counting from NOW, effectively ignoring the gap.
+            if (session.status === 'EXPIRED' || (session.expiresAt && session.expiresAt < now)) {
+                newExpiresAt = new Date(now.getTime() + addedMinutes * 60000);
+            } else if (session.expiresAt) {
+                // If active, add to existing time
+                newExpiresAt = new Date(session.expiresAt.getTime() + addedMinutes * 60000);
+            } else {
+                // Should not happen for PREPAID, but fallback
+                newExpiresAt = new Date(now.getTime() + addedMinutes * 60000);
             }
 
-            return await tx.session.update({
+            return tx.session.update({
                 where: { id: sessionId },
-                data: updateData,
-                include: { pc: { include: { zone: { include: { lan: true } } } }, user: true }
+                data: {
+                    totalCost: { increment: cost },
+                    durationSeconds: { increment: addedMinutes * 60 },
+                    expiresAt: newExpiresAt,
+                    status: 'ACTIVE', // Reactivate if expired/paused
+                    endedAt: null
+                },
+                include: {
+                    pc: { include: { zone: true } },
+                    user: true
+                }
             });
         });
 
@@ -458,7 +460,7 @@ export class SessionsService {
             throw new NotFoundException('Sesión no encontrada');
         }
 
-        if (session.status !== 'ACTIVE') {
+        if (session.status !== 'ACTIVE' && session.status !== 'EXPIRED' && session.status !== 'PAUSED') {
             throw new BadRequestException('La sesión ya fue finalizada');
         }
 

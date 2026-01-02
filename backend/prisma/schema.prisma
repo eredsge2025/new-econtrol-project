@@ -294,6 +294,7 @@ enum SessionStatus {
   PAUSED
   COMPLETED
   ABORTED
+  EXPIRED
 }
 
 // ============================================

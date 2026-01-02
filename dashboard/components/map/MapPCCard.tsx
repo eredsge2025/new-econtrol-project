@@ -112,7 +112,7 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
     const isOccupied = pc.status === 'OCCUPIED' || !!pc.activeUser;
 
     // Timer Logic (Moved up for style dep)
-    const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED');
+    const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
 
     const styles = getStatusStyle(pc.status, !!pc.activeUser, activeSession?.status);
     const [timeLeft, setTimeLeft] = useState<string>('');
@@ -245,17 +245,33 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
             <div className="flex-1 flex flex-col items-center justify-center p-1 relative">
                 {activeSession ? (
                     <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
-                        <span className="text-lg font-mono font-bold tracking-tighter leading-none">
-                            {timeLeft || "00:00"}
-                        </span>
-                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                            S/{Number(activeSession.totalCost || 0).toFixed(2)}
-                        </span>
+                        {activeSession.status === 'EXPIRED' ? (
+                            <>
+                                <span className="text-sm font-bold text-red-500 uppercase tracking-wider mb-0.5">
+                                    Finalizado
+                                </span>
+                                <span className="text-xl font-black text-red-600 dark:text-red-500 tracking-tight">
+                                    S/ {Number(activeSession.totalCost || 0).toFixed(2)}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="text-lg font-mono font-bold tracking-tighter leading-none">
+                                    {timeLeft || "00:00"}
+                                </span>
+                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                    S/{Number(activeSession.totalCost || 0).toFixed(2)}
+                                </span>
+                            </>
+                        )}
 
                         <div className="flex items-center gap-1 mt-1 opacity-75">
                             <Clock className="w-3 h-3" />
-                            <span className="text-[10px] font-medium uppercase">
-                                {activeSession.status === 'PAUSED' ? 'Pausado' : 'Activo'}
+                            <span className={cn(
+                                "text-[10px] font-medium uppercase",
+                                activeSession.status === 'EXPIRED' ? "text-red-500" : ""
+                            )}>
+                                {activeSession.status === 'PAUSED' ? 'Pausado' : activeSession.status === 'EXPIRED' ? 'Expirado' : 'Activo'}
                             </span>
                         </div>
                     </div>

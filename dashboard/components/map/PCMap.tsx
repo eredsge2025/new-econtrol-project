@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pcsApi } from '@/lib/api';
 import { MapPCCard } from './MapPCCard';
 import { Button } from '@/components/ui/button';
-import { Save, Edit2, X, RefreshCw, Monitor, User, RotateCcw, History } from 'lucide-react';
+import { Save, Edit2, X, RefreshCw, Monitor, User, RotateCcw, History, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { io } from 'socket.io-client';
 import {
@@ -212,6 +212,7 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
     const [progress, setProgress] = useState(0);
 
     const isPaused = session.status === 'PAUSED';
+    const isExpired = session.status === 'EXPIRED';
 
     useEffect(() => {
         const updateTimer = () => {
@@ -253,20 +254,20 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
         <div className={`
             relative overflow-hidden rounded-xl border p-5 shadow-xl transition-all duration-300
             flex flex-col gap-4
-            ${isPaused
-                ? 'bg-zinc-900/50 border-amber-900/30'
-                : 'bg-zinc-900 border-zinc-800'}
+            ${isPaused ? 'bg-zinc-900/50 border-amber-900/30' :
+                isExpired ? 'bg-red-950/20 border-red-900/30' :
+                    'bg-zinc-900 border-zinc-800'}
         `}>
             {/* Status Indicator */}
             <div className="flex items-center justify-between">
                 <div className={`
                     flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border
-                    ${isPaused
-                        ? 'bg-amber-950/30 text-amber-500 border-amber-900/30'
-                        : 'bg-emerald-950/30 text-emerald-500 border-emerald-900/30'}
+                    ${isPaused ? 'bg-amber-950/30 text-amber-500 border-amber-900/30' :
+                        isExpired ? 'bg-red-950/30 text-red-500 border-red-900/30' :
+                            'bg-emerald-950/30 text-emerald-500 border-emerald-900/30'}
                 `}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-500' : 'bg-emerald-500'} ${!isPaused && 'animate-pulse'}`} />
-                    {isPaused ? 'En Pausa' : 'En Curso'}
+                    <div className={`w-1.5 h-1.5 rounded-full ${isPaused ? 'bg-amber-500' : isExpired ? 'bg-red-500' : 'bg-emerald-500'} ${(!isPaused && !isExpired) && 'animate-pulse'}`} />
+                    {isPaused ? 'En Pausa' : isExpired ? 'Finalizado' : 'En Curso'}
                 </div>
                 {session.expiresAt && (
                     <div className="flex items-center gap-1.5 text-zinc-500 text-xs">
@@ -283,7 +284,7 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
                 </span>
                 <div className={`
                     text-5xl font-mono font-bold tracking-tight tabular-nums
-                    ${isPaused ? 'text-amber-500' : 'text-zinc-100'}
+                    ${isPaused ? 'text-amber-500' : isExpired ? 'text-red-500' : 'text-zinc-100'}
                 `}>
                     {session.expiresAt ? timeLeft : duration}
                 </div>
@@ -293,7 +294,7 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
             {session.expiresAt && (
                 <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                        className={`h-full rounded-full transition-all duration-1000 ease-linear ${isPaused ? 'bg-amber-600' : 'bg-blue-600'}`}
+                        className={`h-full rounded-full transition-all duration-1000 ease-linear ${isPaused ? 'bg-amber-600' : isExpired ? 'bg-red-600' : 'bg-blue-600'}`}
                         style={{ width: `${progress}%` }}
                     />
                 </div>
@@ -303,7 +304,7 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
             <div className="grid grid-cols-2 gap-2">
                 <div className="bg-zinc-950/30 p-3 rounded-lg border border-emerald-800 flex flex-col items-center">
                     <span className="text-[10px] uppercase text-zinc-500 font-semibold tracking-wider mb-0.5">Costo</span>
-                    <span className="text-lg font-bold text-emerald-500 ">S/ {Number(session.totalCost || 0).toFixed(2)}</span>
+                    <span className={`text-lg font-bold ${isExpired ? 'text-red-500' : 'text-emerald-500'}`}>S/ {Number(session.totalCost || 0).toFixed(2)}</span>
                 </div>
                 <div className="bg-zinc-900/50 p-3 rounded-lg border border-sky-800 flex flex-col items-center">
                     <span className="text-[10px] uppercase text-zinc-500 font-semibold tracking-wider mb-0.5">Inicio</span>
@@ -403,10 +404,23 @@ function PCDetailsDrawer({
         }
     });
 
+    const updateStatusMutation = useMutation({
+        mutationFn: (status: string) => pcsApi.update(pc.id, { status }),
+        onSuccess: () => {
+            toast.success('Estado actualizado. PC liberada.');
+            queryClient.invalidateQueries({ queryKey: ['pcs'] });
+            onClose();
+        },
+        onError: (error: any) => {
+            console.error('Error updating status:', error);
+            toast.error('Error al actualizar estado');
+        }
+    });
+
     const handleStartSession = (type: 'FIXED' | 'BUNDLE', item: any) => {
         if (!pc) return;
 
-        const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED');
+        const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
 
         const payload: any = {
             pcId: pc.id,
@@ -429,7 +443,7 @@ function PCDetailsDrawer({
 
     if (!pc) return null;
 
-    const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED');
+    const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
     const isSessionActive = !!activeSession;
 
     return (
@@ -640,6 +654,26 @@ function PCDetailsDrawer({
                                                 onUndo={() => undoSessionMutation.mutate(activeSession.id)}
                                                 isPendingUndo={undoSessionMutation.isPending}
                                             />
+                                        ) : pc.status === 'OCCUPIED' && !isSessionActive ? (
+                                            <div className="flex-1 flex flex-col items-center justify-center text-center relative overflow-hidden bg-orange-950/10 rounded-xl border border-orange-500/20 p-6">
+                                                <div className="w-16 h-16 bg-orange-900/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/10">
+                                                    <AlertTriangle className="w-8 h-8 text-orange-500" />
+                                                </div>
+                                                <h3 className="text-base font-bold text-orange-400 mb-2">Estado Inconsistente</h3>
+                                                <p className="text-sm text-yellow-100 mb-4">
+                                                    La PC reporta estado OCUPADO pero no existe una sesión activa en el sistema.
+                                                    <br />
+                                                </p>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold"
+                                                    onClick={() => updateStatusMutation.mutate('AVAILABLE')}
+                                                    disabled={updateStatusMutation.isPending}
+                                                >
+                                                    {updateStatusMutation.isPending ? 'Liberando...' : 'Forzar Liberación'}
+                                                </Button>
+                                            </div>
                                         ) : (
                                             <div className="flex-1 flex flex-col items-center justify-center text-center relative overflow-hidden">
                                                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/5 via-transparent to-transparent opacity-50" />
@@ -688,7 +722,7 @@ function PCDetailsDrawer({
                                                         return (
                                                             <div
                                                                 key={idx}
-                                                                className="group p-2.5 rounded-lg bg-zinc-900/40 border border-zinc-900 hover:border-zinc-800 hover:bg-zinc-900/60 transition-all"
+                                                                className="group p-2.5 rounded-lg bg-gray-500/60 border border-zinc-900 hover:border-zinc-800 hover:bg-gray-600/70 transition-all"
                                                             >
                                                                 <div className="flex items-start justify-between gap-2 mb-1">
                                                                     <p className={`text-xs font-medium leading-tight flex-1 ${isRefundOrUndo ? 'text-orange-400' : 'text-zinc-300'
@@ -702,7 +736,7 @@ function PCDetailsDrawer({
                                                                         {Number(tx.amount) > 0 && '+'}{Number(tx.amount).toFixed(2)}
                                                                     </span>
                                                                 </div>
-                                                                <div className="flex items-center gap-1 text-[10px] text-zinc-600">
+                                                                <div className="flex items-center gap-1 text-[10px] text-gray-900">
                                                                     <Clock className="w-2.5 h-2.5" />
                                                                     {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </div>

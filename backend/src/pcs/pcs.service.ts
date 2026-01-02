@@ -42,7 +42,7 @@ export class PcsService {
                 },
                 activeUser: true, // Incluimos el usuario activo si lo hay
                 sessions: {
-                    where: { status: { in: ['ACTIVE', 'PAUSED'] } },
+                    where: { status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED, SessionStatus.EXPIRED] } },
                     take: 1,
                     include: { transactions: { orderBy: { createdAt: 'desc' } } }
                 },
@@ -74,7 +74,7 @@ export class PcsService {
                 },
                 activeUser: true,
                 sessions: {
-                    where: { status: { in: ['ACTIVE', 'PAUSED'] } },
+                    where: { status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED, SessionStatus.EXPIRED] } },
                     take: 1,
                     include: { transactions: { orderBy: { createdAt: 'desc' } } }
                 },
@@ -481,15 +481,16 @@ export class PcsService {
             updateData.ipAddress = ipAddress;
         }
 
-        // Check for active sessions (including expiration check)
+        // Check for occupying sessions (Active, Paused, or Expired)
         let activeSessions = await this.prisma.session.findMany({
             where: {
                 pcId: id,
-                status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED] }
+                status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED, SessionStatus.EXPIRED] }
             }
         });
 
         // 1. Activate Paused Sessions (Queue)
+        // ... (Logic for paused mostly unchanged, but be careful if EXPIRED is in list)
         const pendingSessions = activeSessions.filter(s => s.status === 'PAUSED');
         if (pendingSessions.length > 0) {
             this.logger.log(`[Heartbeat] Activating ${pendingSessions.length} pending sessions for PC ${pc.name}`);
@@ -512,45 +513,44 @@ export class PcsService {
                 });
             }));
 
-            // Refetch active sessions after activation
+            // Refetch including EXPIRED
             activeSessions = await this.prisma.session.findMany({
                 where: {
                     pcId: id,
-                    status: SessionStatus.ACTIVE
+                    status: { in: [SessionStatus.ACTIVE, SessionStatus.EXPIRED] } // Paused became Active
                 }
             });
         }
 
-        // Filter out expired sessions and update them
+        // 2. Check for NEWLY expired sessions
         const now = new Date();
-        const expiredSessions = activeSessions.filter(s => s.expiresAt && new Date(s.expiresAt) < now);
+        const newlyExpiredSessions = activeSessions.filter(s =>
+            s.status !== SessionStatus.EXPIRED && // Not already expired
+            s.expiresAt &&
+            new Date(s.expiresAt) < now
+        );
 
-        if (expiredSessions.length > 0) {
-            this.logger.log(`[Heartbeat] Found ${expiredSessions.length} expired sessions for PC ${pc.name}. Closing them...`);
+        if (newlyExpiredSessions.length > 0) {
+            this.logger.log(`[Heartbeat] Found ${newlyExpiredSessions.length} new expired sessions for PC ${pc.name}. Updating status...`);
 
-            await this.prisma.$transaction([
-                // Update Session Status
-                this.prisma.session.updateMany({
-                    where: { id: { in: expiredSessions.map(s => s.id) } },
-                    data: { status: 'COMPLETED', endedAt: now }
-                }),
-                // Release Users
-                this.prisma.user.updateMany({
-                    where: { id: { in: expiredSessions.map(s => s.userId) } },
-                    data: { activePcId: null }
-                })
-            ]);
+            await this.prisma.session.updateMany({
+                where: { id: { in: newlyExpiredSessions.map(s => s.id) } },
+                data: { status: SessionStatus.EXPIRED, endedAt: now }
+            });
 
-            // Remove expired sessions from the active list for status determination
-            activeSessions = activeSessions.filter(s => !expiredSessions.map(e => e.id).includes(s.id));
+            // We assume these are still "occupying" the PC.
+            // We don't remove them from 'activeSessions' list for the count check.
+            // But we should update their status in memory if we use it later?
+            // For count > 0 check, it doesn't matter (length is same).
         }
 
+        // Count all occupying sessions (Active + Expired + Paused)
         const activeSessionCount = activeSessions.length;
 
-        this.logger.debug(`[Heartbeat] PC ${pc.name} - Active Sessions Count: ${activeSessionCount}`);
+        this.logger.debug(`[Heartbeat] PC ${pc.name} - Occupying Sessions Count: ${activeSessionCount}`);
 
         if (activeSessionCount > 0) {
-            this.logger.debug(`[Heartbeat] Enforcing OCCUPIED status due to active session.`);
+            this.logger.debug(`[Heartbeat] Enforcing OCCUPIED status due to active/expired session.`);
             updateData.status = PCStatus.OCCUPIED;
         } else if (status && status !== pc.status) {
             this.logger.debug(`[Heartbeat] Updating status to ${status} (Client reported)`);
@@ -560,8 +560,7 @@ export class PcsService {
             updateData.status = PCStatus.AVAILABLE;
         }
 
-        // Si el PC está disponible (ya sea por update o por estado previo),
-        // asegurar que no haya usuarios vinculados.
+        // Release activePcId ONLY if PC becomes AVAILABLE
         const effectiveStatus = updateData.status || pc.status;
         if (effectiveStatus === PCStatus.AVAILABLE) {
             const updatedUsers = await this.prisma.user.updateMany({
@@ -582,18 +581,22 @@ export class PcsService {
             },
         });
 
-        // Fetch active sessions to include in response (for client sync)
-        const freshActiveSessions = await this.prisma.session.findMany({
-            where: { pcId: id, status: SessionStatus.ACTIVE }
+        // Fetch ALL occupying sessions + Transactions for history
+        const freshSessions = await this.prisma.session.findMany({
+            where: {
+                pcId: id,
+                status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED, SessionStatus.EXPIRED] }
+            },
+            include: { transactions: { orderBy: { createdAt: 'desc' } } }
         });
 
         // Ensure Gateway emits sessions so Dashboard sees them!
-        const pcForEmit = { ...updatedPc, sessions: freshActiveSessions };
+        const pcForEmit = { ...pc, sessions: freshSessions, status: effectiveStatus };
         this.pcsGateway.emitStatusUpdate(pcForEmit, updatedPc.zone.lanId);
 
         return {
             ...updatedPc,
-            sessions: freshActiveSessions, // Client expects 'sessions' array with status='ACTIVE'
+            sessions: freshSessions,
             success: true,
             shouldUpdate: false,
         };
@@ -640,7 +643,33 @@ export class PcsService {
 
         if (!pc) throw new NotFoundException('PC no encontrada');
 
-        // Liberar cualquier usuario vinculado a esta PC
+        // Check if there's a session that should prevent full release
+        const activeSession = await this.prisma.session.findFirst({
+            where: {
+                pcId: id,
+                status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED, SessionStatus.EXPIRED] }
+            }
+        });
+
+        // If session is EXPIRED (Time Up), we don't want to release the PC yet.
+        // We just ensure it's marked EXPIRED if not already.
+        if (activeSession && activeSession.expiresAt && new Date(activeSession.expiresAt) < new Date()) {
+            // If it's time-up logout, just ensure session is EXPIRED and keep PC OCCUPIED
+            await this.prisma.session.update({
+                where: { id: activeSession.id },
+                data: { status: SessionStatus.EXPIRED }
+            });
+            // Ensure PC is OCCUPIED (locked state)
+            const updatedPc = await this.prisma.pC.update({
+                where: { id },
+                data: { status: PCStatus.OCCUPIED },
+                include: { zone: true, activeUser: true }
+            });
+            this.pcsGateway.emitStatusUpdate(updatedPc, pc.zone.lanId);
+            return { success: true, message: 'PC locked (Session Expired)' };
+        }
+
+        // Liberar cualquier usuario vinculado a esta PC (Only if no relevant session exists)
         await this.prisma.user.updateMany({
             where: { activePcId: id },
             data: { activePcId: null }
