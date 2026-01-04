@@ -59,6 +59,14 @@ export function PCMap({ zones }: PCMapProps) {
                     console.log(`✅ Cache updated for zone ${targetZoneId}. PC ${updatedPc.name} now has ${updatedPc.activeUser ? 'a user' : 'no user'}.`);
                     return newData;
                 });
+
+                // Also update selectedPc if it matches the updated PC
+                setSelectedPc((prev: any) => {
+                    if (prev && prev.id === updatedPc.id) {
+                        return { ...prev, ...updatedPc };
+                    }
+                    return prev;
+                });
                 queryClient.invalidateQueries({ queryKey: ['pcs', targetZoneId] });
             }
         });
@@ -363,6 +371,15 @@ function PCDetailsDrawer({
         enabled: !!pc?.zoneId && isOpen,
     });
 
+    // Fetches fresh PC data to ensure the drawer stays synced with mutations/sockets
+    const { data: zonePcs } = useQuery({
+        queryKey: ['pcs', pc?.zoneId],
+        queryFn: () => pcsApi.getByZone(pc?.zoneId),
+        enabled: !!pc?.zoneId && isOpen,
+    });
+
+    const livePc = zonePcs?.find((p: any) => p.id === pc?.id) || pc;
+
     const queryClient = useQueryClient();
 
     const startSessionMutation = useMutation({
@@ -405,7 +422,7 @@ function PCDetailsDrawer({
     });
 
     const updateStatusMutation = useMutation({
-        mutationFn: (status: string) => pcsApi.update(pc.id, { status }),
+        mutationFn: (status: string) => pcsApi.update(livePc.id, { status }),
         onSuccess: () => {
             toast.success('Estado actualizado. PC liberada.');
             queryClient.invalidateQueries({ queryKey: ['pcs'] });
@@ -418,12 +435,12 @@ function PCDetailsDrawer({
     });
 
     const handleStartSession = (type: 'FIXED' | 'BUNDLE', item: any) => {
-        if (!pc) return;
+        if (!livePc) return;
 
-        const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
+        const activeSession = livePc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
 
         const payload: any = {
-            pcId: pc.id,
+            pcId: livePc.id,
             pricingType: type,
         };
 
@@ -436,23 +453,23 @@ function PCDetailsDrawer({
         if (activeSession) {
             extendSessionMutation.mutate({ id: activeSession.id, data: payload });
         } else {
-            payload.userId = pc.activeUser?.id;
+            payload.userId = livePc.activeUser?.id;
             startSessionMutation.mutate(payload);
         }
     };
 
-    if (!pc) return null;
+    if (!livePc) return null;
 
-    const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
+    const activeSession = livePc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
     const isSessionActive = !!activeSession;
 
     return (
         <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DrawerContent className="h-[60vh] bg-gray-950 border-t border-zinc-800 flex flex-col">
                 <DrawerHeader className="sr-only">
-                    <DrawerTitle>Detalles de {pc.name}</DrawerTitle>
+                    <DrawerTitle>Detalles de {livePc.name}</DrawerTitle>
                     <DrawerDescription>
-                        Gestionar sesión y ventas para {pc.name}
+                        Gestionar sesión y ventas para {livePc.name}
                     </DrawerDescription>
                 </DrawerHeader>
                 <div className="mx-auto w-full max-w-8xl flex flex-col h-full overflow-hidden px-5 py-3">
@@ -463,26 +480,26 @@ function PCDetailsDrawer({
                                 <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600/20 to-indigo-600/20 flex items-center justify-center border border-white/5">
                                     <Monitor className="h-5 w-5 text-blue-500" />
                                 </div>
-                                <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-950 ${pc.status === 'AVAILABLE' ? 'bg-emerald-500' :
-                                    pc.status === 'OCCUPIED' ? 'bg-blue-500' :
+                                <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-950 ${livePc.status === 'AVAILABLE' ? 'bg-emerald-500' :
+                                    livePc.status === 'OCCUPIED' ? 'bg-blue-500' :
                                         'bg-orange-500'
                                     }`} />
                             </div>
 
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h2 className="text-lg font-bold text-white">{pc.name}</h2>
+                                    <h2 className="text-lg font-bold text-white">{livePc.name}</h2>
                                     <Badge variant="outline" className="text-[9px] font-mono border-zinc-800 text-zinc-500 px-1.5 h-4">
-                                        {pc.ipAddress || 'NO IP'}
+                                        {livePc.ipAddress || 'NO IP'}
                                     </Badge>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs">
-                                    {pc.activeUser ? (
+                                    {livePc.activeUser ? (
                                         <>
                                             <div className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                            <span className="text-blue-400 font-medium">{pc.activeUser.username || pc.activeUser.email}</span>
+                                            <span className="text-blue-400 font-medium">{livePc.activeUser.username || livePc.activeUser.email}</span>
                                         </>
-                                    ) : pc.status === 'OCCUPIED' ? (
+                                    ) : livePc.status === 'OCCUPIED' ? (
                                         <span className="text-zinc-400 flex items-center gap-1">
                                             <div className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" /> Invitado
                                         </span>
@@ -654,7 +671,7 @@ function PCDetailsDrawer({
                                                 onUndo={() => undoSessionMutation.mutate(activeSession.id)}
                                                 isPendingUndo={undoSessionMutation.isPending}
                                             />
-                                        ) : pc.status === 'OCCUPIED' && !isSessionActive ? (
+                                        ) : livePc.status === 'OCCUPIED' && !isSessionActive ? (
                                             <div className="flex-1 flex flex-col items-center justify-center text-center relative overflow-hidden bg-orange-950/10 rounded-xl border border-orange-500/20 p-6">
                                                 <div className="w-16 h-16 bg-orange-900/20 rounded-full flex items-center justify-center mb-4 border border-orange-500/10">
                                                     <AlertTriangle className="w-8 h-8 text-orange-500" />

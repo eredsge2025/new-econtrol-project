@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
@@ -77,6 +78,28 @@ namespace eControl.Agent.UI.Services
             {
                 return null;
             }
+        }
+
+        public async Task<List<RateDto>> GetRatesAsync()
+        {
+            var responseJson = await SendMessageAsync(PipeMessageType.GetRates);
+            try { return JsonConvert.DeserializeObject<List<RateDto>>(responseJson) ?? new List<RateDto>(); }
+            catch { return new List<RateDto>(); }
+        }
+
+        public async Task<List<BundleDto>> GetBundlesAsync()
+        {
+            var responseJson = await SendMessageAsync(PipeMessageType.GetBundles);
+            try { return JsonConvert.DeserializeObject<List<BundleDto>>(responseJson) ?? new List<BundleDto>(); }
+            catch { return new List<BundleDto>(); }
+        }
+
+        public async Task<PurchaseResponse> PurchaseAsync(string itemId, string type, string userId, string paymentMethod = "BALANCE")
+        {
+            var payload = new PurchaseRequestPayload { ItemId = itemId, Type = type, UserId = userId, PaymentMethod = paymentMethod };
+            var responseJson = await SendMessageAsync(PipeMessageType.PurchaseRequest, JsonConvert.SerializeObject(payload));
+            try { return JsonConvert.DeserializeObject<PurchaseResponse>(responseJson) ?? new PurchaseResponse { Success = false, Message = "Invalid response" }; }
+            catch { return new PurchaseResponse { Success = false, Message = "Parse error" }; }
         }
     }
 }

@@ -142,6 +142,7 @@ namespace eControl.Agent.Master
                             });
 
                 case PipeMessageType.LoginRequest:
+                    LogToFile($"Pipe: LoginRequest received. Payload: {message.Payload}");
                     var loginData = JsonConvert.DeserializeObject<LoginRequest>(message.Payload);
                     if (loginData != null && _apiService != null)
                     {
@@ -150,34 +151,44 @@ namespace eControl.Agent.Master
                         {
                             loginData.PcId = _pcInfo.PcId;
                         }
+                        else 
+                        {
+                            LogToFile("Pipe: LoginRequest WARNING - _pcInfo is NULL");
+                        }
 
                         var result = await _apiService.LoginAsync(loginData);
                         if (result != null && result.Success)
                         {
                             _logger.LogInformation("🔑 Login successful for {Identifier}", loginData.Identifier);
+                            LogToFile($"Pipe: Login successful for {loginData.Identifier}");
                             _currentStatus = AgentStatusInternal.AUTHENTICATED;
-                            // Nota: NO desactivamos el Kiosk Mode aquí. Se mantiene bloqueado hasta iniciar sesión de tiempo.
+                        }
+                        else 
+                        {
+                            LogToFile($"Pipe: Login FAILED: {result?.Message}");
                         }
                         return JsonConvert.SerializeObject(result);
                     }
                     break;
 
                 case PipeMessageType.StartSessionRequest:
+                    LogToFile($"Pipe: StartSessionRequest received. CurrentStatus: {_currentStatus}");
                     if (_currentStatus == AgentStatusInternal.AUTHENTICATED || _currentStatus == AgentStatusInternal.LOCKED)
                     {
-                        // Aquí idealmente verificaríamos saldo/tiempo con el backend de nuevo
                         _logger.LogInformation("⏳ Starting Session (Unlocking Kiosk)...");
+                        LogToFile("Pipe: StartSessionRequest - Success, unlocking kiosk mode.");
                         _currentStatus = AgentStatusInternal.SESSION_ACTIVE;
                         _securityService.SetKioskMode(false); // Desbloqueo Real
                         return JsonConvert.SerializeObject(new { Success = true });
                     }
+                    LogToFile($"Pipe: StartSessionRequest - Rejected. Reason: Must be authenticated. Current: {_currentStatus}");
                     return JsonConvert.SerializeObject(new { Success = false, Message = "Must be authenticated first" });
 
                 case PipeMessageType.LogoutRequest:
+                    LogToFile("Pipe: LogoutRequest received.");
                     _logger.LogInformation("🚪 Logout Requested. Notifying backend and locking system.");
                     if (_pcInfo != null && _apiService != null)
                     {
-                        // Notificar al backend inmediatamente para que el mapa se actualice
                         _ = _apiService.LogoutPcAsync(_pcInfo.PcId);
                     }
                     _currentStatus = AgentStatusInternal.LOCKED;
@@ -186,6 +197,62 @@ namespace eControl.Agent.Master
 
                 case PipeMessageType.StatusUpdate:
                     return _currentStatus.ToString();
+
+                case PipeMessageType.GetRates:
+                    LogToFile($"Pipe: GetRates received. _pcInfo is {(_pcInfo == null ? "NULL" : "OK")}");
+                     if (_pcInfo != null && _apiService != null)
+                     {
+                         var rates = await _apiService.GetRatesAsync(_pcInfo.PcId);
+                         LogToFile($"Pipe: GetRates returning {rates.Count} items");
+                         return JsonConvert.SerializeObject(rates);
+                     }
+                     return "[]";
+
+                case PipeMessageType.GetBundles:
+                    LogToFile($"Pipe: GetBundles received. _pcInfo is {(_pcInfo == null ? "NULL" : "OK")}");
+                     if (_pcInfo != null && _apiService != null)
+                     {
+                         var bundles = await _apiService.GetBundlesAsync(_pcInfo.PcId);
+                         LogToFile($"Pipe: GetBundles returning {bundles.Count} items");
+                         return JsonConvert.SerializeObject(bundles);
+                     }
+                     return "[]";
+
+                case PipeMessageType.PurchaseRequest:
+                    LogToFile($"Pipe: PurchaseRequest received. Payload: {message.Payload}");
+                     if (_pcInfo != null && _apiService != null)
+                     {
+                         var purchaseData = JsonConvert.DeserializeObject<PurchaseRequestPayload>(message.Payload);
+                         var activeUser = ""; 
+                         if (purchaseData != null && !string.IsNullOrEmpty(purchaseData.UserId))
+                         {
+                             activeUser = purchaseData.UserId;
+                             LogToFile($"Pipe: PurchaseRequest - Using UserId from payload: {activeUser}");
+                         }
+                         else 
+                         {
+                             try 
+                             {
+                                 dynamic pcData = JsonConvert.DeserializeObject(_currentSessionData)!;
+                                 if (pcData.activeUser != null) activeUser = pcData.activeUser.id;
+                                 LogToFile($"Pipe: PurchaseRequest - Fallback to _currentSessionData: {activeUser}");
+                             } catch (Exception ex) {
+                                 LogToFile($"Pipe: PurchaseRequest - Error parsing session data: {ex.Message}");
+                             }
+                         }
+
+                         if (string.IsNullOrEmpty(activeUser))
+                         {
+                             LogToFile("Pipe: PurchaseRequest - FAILED: activeUser is empty");
+                             return JsonConvert.SerializeObject(new PurchaseResponse { Success = false, Message = "Usuario no identificado" });
+                         }
+
+                         var response = await _apiService.PurchaseAsync(_pcInfo.PcId, activeUser, purchaseData!);
+                         LogToFile($"Pipe: PurchaseRequest Result: {response.Success}. NewBalance: {response.NewBalance}");
+                         return JsonConvert.SerializeObject(response);
+                     }
+                     LogToFile("Pipe: PurchaseRequest - FAILED: Master not ready (_pcInfo/ApiService null)");
+                     return JsonConvert.SerializeObject(new PurchaseResponse { Success = false, Message = "Servicio no disponible" });
             }
 
             return "Unknown";
@@ -241,7 +308,7 @@ namespace eControl.Agent.Master
 
                     if (!string.IsNullOrEmpty(hbResponse))
                     {
-                         // Parse response to check for sessions
+                         LogToFile($"Heartbeat Response: {hbResponse}");
                          if (IsSessionActive(hbResponse))
                          {
                              // Backup current data
@@ -426,7 +493,7 @@ namespace eControl.Agent.Master
         {
             try
             {
-                LogToFile("RegisterWithBackendAsync: Starting...");
+                LogToFile("RegisterWithBackendAsync: Starting registration check...");
                 var request = new RegisterRequest
                 {
                     LanId = _config.LanId,
@@ -435,17 +502,19 @@ namespace eControl.Agent.Master
                     IpAddress = _hardwareService.GetLocalIpAddress()
                 };
 
+                LogToFile($"RegisterWithBackendAsync: Sending request for Hostname={request.Hostname}, MAC={request.MacAddress}");
                 _pcInfo = await _apiService!.RegisterPcAsync(request);
 
                 if (_pcInfo != null && _pcInfo.Success)
                 {
                     _logger.LogInformation("✅ Registered successfully. PC ID: {PcId}", _pcInfo.PcId);
-                    LogToFile($"✅ Registered successfully. PC ID: {_pcInfo.PcId}");
+                    LogToFile($"✅ Registered successfully. PC ID: {_pcInfo.PcId}, LanId: {_pcInfo.LanId}");
                     
                     // Sync LanId from Backend
                     if (!string.IsNullOrEmpty(_pcInfo.LanId) && _pcInfo.LanId != _config.LanId)
                     {
                         _logger.LogInformation("🔄 Updating LanId from Backend: {LanId}", _pcInfo.LanId);
+                        LogToFile($"🔄 Updating LanId from {_config.LanId} to {_pcInfo.LanId}");
                         _config.LanId = _pcInfo.LanId;
                         // Save updated config
                         string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
@@ -463,6 +532,7 @@ namespace eControl.Agent.Master
                 // Try to connect socket if we have ID (even if re-registering)
                 if (_pcInfo != null && !string.IsNullOrEmpty(_pcInfo.PcId))
                 {
+                    LogToFile($"RegisterWithBackendAsync: Attempting socket connection for PC {_pcInfo.PcId}");
                     await _socketService!.ConnectAsync(_pcInfo.PcId, _config.LanId);
                 }
             }
@@ -551,7 +621,8 @@ namespace eControl.Agent.Master
                 {
                     foreach(var s in pcData.sessions) 
                     { 
-                        if ((string)s.status == "ACTIVE") return true; 
+                        string status = (string)s.status;
+                        if (status == "ACTIVE" || status == "PAUSED" || status == "EXPIRED") return true; 
                     }
                 }
             }

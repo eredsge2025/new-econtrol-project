@@ -4,6 +4,8 @@ import {
     ForbiddenException,
     BadRequestException,
     Logger,
+    Inject,
+    forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePcDto } from './dto/create-pc.dto';
@@ -11,6 +13,8 @@ import { UpdatePcDto } from './dto/update-pc.dto';
 import { PcEntity } from './entities/pc.entity';
 import { UserRole, PCStatus, SessionStatus } from '@prisma/client';
 import { PcsGateway } from './pcs.gateway';
+import { SessionsService } from '../sessions/sessions.service';
+import { PricingType } from '../sessions/dto/start-session.dto';
 
 @Injectable()
 export class PcsService {
@@ -18,7 +22,9 @@ export class PcsService {
 
     constructor(
         private prisma: PrismaService,
-        private pcsGateway: PcsGateway
+        private pcsGateway: PcsGateway,
+        @Inject(forwardRef(() => SessionsService))
+        private sessionsService: SessionsService,
     ) { }
 
     async findByZone(zoneId: string): Promise<PcEntity[]> {
@@ -405,6 +411,7 @@ export class PcsService {
 
             return {
                 ...pc,
+                lanId: pc.zone.lanId,
                 success: true,
                 message: 'PC registrada exitosamente',
                 isNew: true,
@@ -431,6 +438,12 @@ export class PcsService {
                 updateData.name = hostname;
             }
 
+            // AUTO-CORRECCIÓN: Si la PC está asociada a un LAN distinto, reasignar a la zona por defecto del nuevo LAN
+            if (pc.zone?.lanId !== lanId) {
+                console.log(`[PcsService] PC ${pc.name} belong to LAN ${pc.zone?.lanId}, moving to LAN ${lanId} (Zone ${lan.zones[0].id})`);
+                updateData.zoneId = lan.zones[0].id;
+            }
+
             pc = await this.prisma.pC.update({
                 where: { id: pc.id },
                 data: updateData,
@@ -453,6 +466,7 @@ export class PcsService {
 
             return {
                 ...pc,
+                lanId: pc.zone.lanId,
                 success: true,
                 message: 'PC actualizada',
                 isNew: false,
@@ -688,5 +702,21 @@ export class PcsService {
         this.pcsGateway.emitStatusUpdate(updatedPc, pc.zone.lanId);
 
         return { success: true, message: 'PC liberada exitosamente' };
+    }
+
+    async startSession(pcId: string) {
+        const pc = await this.prisma.pC.findUnique({
+            where: { id: pcId },
+            include: { activeUser: true }
+        });
+
+        if (!pc) throw new NotFoundException('PC no encontrada');
+        if (!pc.activeUser) throw new BadRequestException('No hay un usuario autenticado en esta PC');
+
+        // Intentar iniciar sesión POSTPAID por defecto (Open Session)
+        return this.sessionsService.start(pc.activeUser.id, {
+            pcId,
+            pricingType: PricingType.OPEN
+        });
     }
 }

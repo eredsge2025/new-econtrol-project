@@ -11,9 +11,10 @@ import { RateSchedulesModule } from './rate-schedules/rate-schedules.module';
 import { BundlesModule } from './bundles/bundles.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { AdminModule } from './admin/admin.module';
+import { AgentsModule } from './agents/agents.module';
 
 @Module({
-    imports: [PrismaModule, AuthModule, UsersModule, LANsModule, ZonesModule, PcsModule, RateSchedulesModule, BundlesModule, SessionsModule, AdminModule],
+    imports: [PrismaModule, AuthModule, UsersModule, LANsModule, ZonesModule, PcsModule, RateSchedulesModule, BundlesModule, SessionsModule, AdminModule, AgentsModule],
     controllers: [AppController],
     providers: [AppService],
 })

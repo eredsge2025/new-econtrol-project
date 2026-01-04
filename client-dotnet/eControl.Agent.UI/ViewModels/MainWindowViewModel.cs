@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -11,60 +13,39 @@ namespace eControl.Agent.UI.ViewModels
     public partial class MainWindowViewModel : ViewModelBase
     {
         private readonly NamedPipeClientService _pipeClient;
+        private System.Timers.Timer _idleTimer;
+        private string _currentUserId = string.Empty;
 
-        [ObservableProperty]
+        [ObservableProperty] private bool _showLoginForm;
+        [ObservableProperty] private bool _isLoggedIn;
+        [ObservableProperty] private string _pcName = "Consultando...";
+        [ObservableProperty] 
         [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
-        private string _username = string.Empty;
-
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
-        private string _password = string.Empty;
-
-        [ObservableProperty]
-        private string _errorMessage = string.Empty;
-        
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
+        [NotifyCanExecuteChangedFor(nameof(StartSessionCommand))]
         private bool _isBusy;
 
-        [ObservableProperty]
-        private bool _isLoggedIn;
+        [ObservableProperty] private string _errorMessage = "";
 
-        [ObservableProperty]
-        private bool _isSessionActive;
+        [ObservableProperty] 
+        [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
+        private string _username = "";
 
-        [ObservableProperty]
-        private string _windowState = "FullScreen";
-
-        [ObservableProperty]
-        private double _windowWidth = double.NaN; // NaN = Auto/Stretch
-
-        [ObservableProperty]
-        private double _windowHeight = double.NaN; // NaN = Auto/Stretch
-
-        [ObservableProperty]
-        private string _verticalAlignment = "Stretch";
-
-        [ObservableProperty]
-        private string _horizontalAlignment = "Stretch";
+        [ObservableProperty] 
+        [NotifyCanExecuteChangedFor(nameof(LoginCommand))]
+        private string _password = "";
+        [ObservableProperty] private string _displayName = "";
+        [ObservableProperty] private bool _isSessionActive;
+        [ObservableProperty] private bool _isPillVisible;
+        [ObservableProperty] private bool _isDashboardVisible;
+        [ObservableProperty] private string _remainingTime = "00:00:00";
         
-        [ObservableProperty]
-        private string _background = "#1A1A1A";
-
-        [ObservableProperty]
-        private bool _isDashboardVisible;
-
-        [ObservableProperty]
-        private bool _isPillVisible;
-
-        [ObservableProperty]
-        private string _pcName = "Loading...";
-
-        [ObservableProperty]
-        private string _displayName = string.Empty;
-
-        [ObservableProperty]
-        private string _remainingTime = "00:00:00";
+        [ObservableProperty] private string _windowState = "FullScreen";
+        [ObservableProperty] private double _windowWidth = double.NaN;
+        [ObservableProperty] private double _windowHeight = double.NaN;
+        [ObservableProperty] private string _verticalAlignment = "Stretch";
+        [ObservableProperty] private string _horizontalAlignment = "Stretch";
+        [ObservableProperty] private string _background = "#1A1A1A";
+        [ObservableProperty] private decimal _userBalance;
 
         public MainWindowViewModel()
         {
@@ -72,6 +53,16 @@ namespace eControl.Agent.UI.ViewModels
             // Log for debugging
             Log("MainWindowViewModel Initialized.");
             
+            _idleTimer = new System.Timers.Timer(10000); // 10 seconds inactivity
+            _idleTimer.Elapsed += (s, e) => 
+            {
+                if (ShowLoginForm && !IsLoggedIn) 
+                {
+                     ShowLoginForm = false;
+                }
+                _idleTimer.Stop();
+            };
+
             // Iniciar carga de info del PC en segundo plano
             Task.Run(async () => 
             {
@@ -155,7 +146,23 @@ namespace eControl.Agent.UI.ViewModels
                                          {
                                              // Session Ended -> Lock
                                              IsSessionActive = false;
-                                             ResetState();
+                                             IsPillVisible = false;
+                                             
+                                             // Return to Dashboard (Authenticated) or Login (Guest)
+                                             if (IsLoggedIn)
+                                             {
+                                                 IsDashboardVisible = true;
+                                                 Background = "#1A1A1A";
+                                                 WindowState = "FullScreen";
+                                                 WindowWidth = double.NaN;
+                                                 WindowHeight = double.NaN;
+                                                 VerticalAlignment = "Stretch";
+                                                 HorizontalAlignment = "Stretch";
+                                             }
+                                             else 
+                                             {
+                                                 ResetState();
+                                             }
                                          }
                                      }
                                  });
@@ -166,6 +173,23 @@ namespace eControl.Agent.UI.ViewModels
                     await Task.Delay(250); // V3.6: Faster polling for instant reaction
                 }
             });
+        }
+
+        [RelayCommand]
+        public void ShowLogin()
+        {
+            ShowLoginForm = true;
+            _idleTimer.Stop();
+            _idleTimer.Start();
+        }
+
+        public void ResetIdleTimer()
+        {
+            if (ShowLoginForm) 
+            {
+               _idleTimer.Stop();
+               _idleTimer.Start();
+            }
         }
 
         private bool CanLogin()
@@ -194,24 +218,33 @@ namespace eControl.Agent.UI.ViewModels
 
             IsBusy = true;
             ErrorMessage = string.Empty;
+            LogToFile($"LoginAsync: Starting login for {Username}...");
 
             try
             {
                 var response = await _pipeClient.LoginAsync(Username, Password);
+                LogToFile($"LoginAsync: Response success={response.Success}, Message={response.Message}");
                 
                 if (response.Success)
                 {
                     IsLoggedIn = true; 
+                    ShowLoginForm = false; // Hide Login Form
                     ErrorMessage = string.Empty;
                     
-                    // Almacenar el nombre del usuario autenticado
+                    // Almacenar el nombre del usuario autenticado y saldo
+                    _currentUserId = response.User?.Id ?? string.Empty;
                     DisplayName = response.User?.Username ?? response.User?.Email ?? Username;
+                    UserBalance = response.User?.Balance ?? 0;
+                    LogToFile($"LoginAsync: Success. User={DisplayName} (ID={_currentUserId}), Balance={UserBalance}");
                     
                     // Show Dashboard, Hide Pill, Keep Background Opaque
                     IsDashboardVisible = true;
                     IsPillVisible = false;
                     Background = "#1A1A1A";
                     WindowState = "FullScreen";
+
+                    // Load Store Items immediately
+                    _ = LoadStoreItems();
                 }
                 else
                 {
@@ -221,20 +254,24 @@ namespace eControl.Agent.UI.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error de conexión: {ex.Message}";
+                LogToFile($"LoginAsync: Exception: {ex.Message}");
             }
             finally
             {
                 IsBusy = false;
+                LogToFile("LoginAsync: Finished.");
             }
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanStartSession))]
         private async Task StartSessionAsync()
         {
             IsBusy = true;
+            LogToFile("StartSessionAsync: Command triggered.");
             try
             {
                 var success = await _pipeClient.StartSessionAsync();
+                LogToFile($"StartSessionAsync: Pipe call result={success}");
                 if (success)
                 {
                     IsSessionActive = true;
@@ -256,8 +293,14 @@ namespace eControl.Agent.UI.ViewModels
                     ErrorMessage = "No se pudo iniciar la sesión. Verifique su saldo.";
                 }
             }
+            catch (Exception ex)
+            {
+                LogToFile($"StartSessionAsync: Exception: {ex.Message}");
+            }
             finally { IsBusy = false; }
         }
+
+        private bool CanStartSession() => !IsBusy;
 
         [ObservableProperty]
         private bool _isLoading;
@@ -267,6 +310,7 @@ namespace eControl.Agent.UI.ViewModels
         {
             if (IsLoading) return;
             IsLoading = true;
+            LogToFile("LogoutAsync: Triggered.");
 
             try
             {
@@ -275,7 +319,6 @@ namespace eControl.Agent.UI.ViewModels
                 IsPillVisible = false;
                 
                 // Forzar pantalla completa y fondo opaco
-                // Esto asegura que el escritorio se oculte inmediatamente
                 Background = "#1A1A1A";
                 WindowState = "FullScreen"; 
                 WindowWidth = double.NaN;
@@ -283,8 +326,6 @@ namespace eControl.Agent.UI.ViewModels
                 VerticalAlignment = "Stretch";
                 HorizontalAlignment = "Stretch";
                 
-                // Pequeña pausa para permitir que la UI se actualice visualmente antes de la operación de red
-                // Esto evita bloqueos en el renderizado
                 await Task.Delay(50);
                 
                 // 2. Enviar petición al backend
@@ -336,14 +377,17 @@ namespace eControl.Agent.UI.ViewModels
         
         private void ResetState()
         {
+             LogToFile("ResetState: Cleaning up UI state.");
              Username = "";
              Password = "";
              ErrorMessage = "";
              IsLoggedIn = false;
+             ShowLoginForm = false;
              IsSessionActive = false;
              IsDashboardVisible = false;
              IsPillVisible = false;
              DisplayName = "";
+             UserBalance = 0;
              WindowState = "FullScreen";
              VerticalAlignment = "Stretch";
              HorizontalAlignment = "Stretch";
@@ -351,5 +395,98 @@ namespace eControl.Agent.UI.ViewModels
              WindowWidth = double.NaN;
              Background = "#1A1A1A";
         }
+        // Purchase Logic
+        public ObservableCollection<RateDto> Rates { get; } = new();
+        public ObservableCollection<BundleDto> Bundles { get; } = new();
+
+        [ObservableProperty] private bool _isPurchaseLoading;
+
+        public async Task LoadStoreItems()
+        {
+            if (IsPurchaseLoading) return;
+            IsPurchaseLoading = true;
+            LogToFile("LoadStoreItems: Fetching rates and bundles...");
+            try
+            {
+                var rates = await _pipeClient.GetRatesAsync();
+                var bundles = await _pipeClient.GetBundlesAsync();
+
+                LogToFile($"LoadStoreItems: Received {rates.Count} rates and {bundles.Count} bundles.");
+
+                Rates.Clear();
+                foreach(var r in rates) Rates.Add(r);
+
+                Bundles.Clear();
+                foreach(var b in bundles) Bundles.Add(b);
+            }
+            catch (Exception ex)
+            {
+                LogToFile($"LoadStoreItems: Exception: {ex.Message}");
+            }
+            finally
+            {
+                IsPurchaseLoading = false;
+            }
+        }
+
+        [RelayCommand]
+        public async Task PurchaseRate(RateDto rate)
+        {
+             await PurchaseItem(rate.Id, "RATE", rate.Name, rate.Price);
+        }
+
+        [RelayCommand]
+        public async Task PurchaseBundle(BundleDto bundle)
+        {
+             await PurchaseItem(bundle.Id, "BUNDLE", bundle.Name, bundle.Price);
+        }
+
+        private async Task PurchaseItem(string itemId, string type, string itemName, decimal price)
+        {
+            if (IsPurchaseLoading) return;
+            IsPurchaseLoading = true;
+            ErrorMessage = $"Procesando compra de {itemName}...";
+            LogToFile($"PurchaseItem: Buying {itemName} ({type}) ID={itemId}");
+
+            try 
+            {
+                var response = await _pipeClient.PurchaseAsync(itemId, type, _currentUserId);
+                LogToFile($"PurchaseItem: Response success={response.Success}, NewBalance={response.NewBalance}");
+
+                if (response.Success)
+                {
+                    ErrorMessage = ""; 
+                    UserBalance = response.NewBalance;
+                    
+                    // Auto-Unlock UI locally
+                    IsSessionActive = true;
+                    IsDashboardVisible = false;
+                    IsPillVisible = true;
+                    Background = "Transparent";
+                    WindowState = "Normal";
+                    WindowWidth = 450;
+                    WindowHeight = 100;
+                    VerticalAlignment = "Top";
+                    HorizontalAlignment = "Center";
+                }
+                else
+                {
+                    ErrorMessage = $"Error: {response.Message}";
+                }
+            }
+            catch (Exception ex)
+            {
+                LogToFile($"PurchaseItem: Exception: {ex.Message}");
+                ErrorMessage = $"Error: {ex.Message}";
+            }
+            finally 
+            {
+                IsPurchaseLoading = false;
+            }
+        }
+
+        // Trigger loading on Login Success
+        [ObservableProperty]
+        private bool _showAlert;
     }
 }

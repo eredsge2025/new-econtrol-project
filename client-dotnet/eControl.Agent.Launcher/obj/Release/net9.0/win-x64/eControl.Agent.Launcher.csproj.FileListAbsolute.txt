@@ -201,3 +201,4 @@ C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Launc
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Launcher\obj\Release\net9.0\win-x64\agent-launcher.pdb
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Launcher\obj\Release\net9.0\win-x64\eControl.Agent.Launcher.genruntimeconfig.cache
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Launcher\obj\Release\net9.0\win-x64\ref\agent-launcher.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Launcher\obj\Release\net9.0\win-x64\eControl.Agent.Launcher.sourcelink.json

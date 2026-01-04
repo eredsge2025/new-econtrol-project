@@ -235,3 +235,12 @@ C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\ob
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\obj\Release\net9.0\win-x64\refint\agent-ui.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\obj\Release\net9.0\win-x64\agent-ui.pdb
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\obj\Release\net9.0\win-x64\ref\agent-ui.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\obj\Release\net9.0\win-x64\eControl.Agent.UI.sourcelink.json
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\Avalonia.Xaml.Interactions.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\Avalonia.Xaml.Interactions.Custom.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\Avalonia.Xaml.Interactions.DragAndDrop.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\Avalonia.Xaml.Interactions.Draggable.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\Avalonia.Xaml.Interactions.Events.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\Avalonia.Xaml.Interactions.Responsive.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\Avalonia.Xaml.Interactivity.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.UI\bin\Release\net9.0\win-x64\System.Reactive.dll

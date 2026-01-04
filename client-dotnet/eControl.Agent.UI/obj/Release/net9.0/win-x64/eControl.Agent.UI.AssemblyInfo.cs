@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("agent-ui")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e2de10b5aa9aa747656c664fd453fc727e399bba")]
 [assembly: System.Reflection.AssemblyProductAttribute("agent-ui")]
 [assembly: System.Reflection.AssemblyTitleAttribute("agent-ui")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

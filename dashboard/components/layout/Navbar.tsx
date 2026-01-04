@@ -4,11 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, User } from 'lucide-react';
 
+import { UserRechargeSearch } from '@/components/users/UserRechargeSearch';
+
 export function Navbar() {
     const { user, logout } = useAuth();
 
     return (
-        <div className="h-16 bg-background border-b border-border flex items-center justify-between px-8">
+        <div className="h-16 bg-background border-b border-border flex items-center justify-between px-8 gap-4">
             <div>
                 <h2 className="text-lg font-semibold text-foreground">
                     Bienvenido, {user?.username || 'Usuario'}
@@ -17,6 +19,8 @@ export function Navbar() {
                     {user?.role || 'CLIENT'}
                 </p>
             </div>
+
+            <UserRechargeSearch />
 
             <div className="flex items-center gap-4">
                 <div className="text-right">

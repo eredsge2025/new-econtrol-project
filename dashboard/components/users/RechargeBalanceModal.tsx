@@ -16,11 +16,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Wallet, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { User } from '@/types';
 
 interface RechargeBalanceModalProps {
     isOpen: boolean;
     onClose: () => void;
-    user: any;
+    user: User;
 }
 
 export function RechargeBalanceModal({ isOpen, onClose, user }: RechargeBalanceModalProps) {

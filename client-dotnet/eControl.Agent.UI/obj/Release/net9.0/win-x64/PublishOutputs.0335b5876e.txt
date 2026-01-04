@@ -207,6 +207,13 @@ C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.The
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Win32.Automation.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Win32.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.X11.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Xaml.Interactions.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Xaml.Interactions.Custom.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Xaml.Interactions.DragAndDrop.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Xaml.Interactions.Draggable.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Xaml.Interactions.Events.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Xaml.Interactions.Responsive.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Avalonia.Xaml.Interactivity.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\CommunityToolkit.Mvvm.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\FluentIcons.Avalonia.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\FluentIcons.Common.dll
@@ -215,6 +222,7 @@ C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\HarfBuzzShar
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\MicroCom.Runtime.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Newtonsoft.Json.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\SkiaSharp.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\System.Reactive.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\Tmds.DBus.Protocol.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\av_libglesv2.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\temp_ui\libHarfBuzzSharp.dll

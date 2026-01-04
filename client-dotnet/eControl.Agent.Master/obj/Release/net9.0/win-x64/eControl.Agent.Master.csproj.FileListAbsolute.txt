@@ -242,3 +242,4 @@ C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Maste
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\bin\Release\net9.0\win-x64\SocketIO.Serializer.Core.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\bin\Release\net9.0\win-x64\SocketIO.Serializer.SystemTextJson.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\bin\Release\net9.0\win-x64\SocketIOClient.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Master\obj\Release\net9.0\win-x64\eControl.Agent.Master.sourcelink.json

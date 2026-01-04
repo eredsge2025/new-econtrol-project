@@ -195,5 +195,92 @@ namespace eControl.Agent.Master.Services
                 return false;
             }
         }
+
+        public async Task<List<RateDto>> GetRatesAsync(string pcId)
+        {
+             try 
+             {
+                 _logger.LogInformation($"ApiService: Fetching rates for PC {pcId}");
+                 var response = await _httpClient.GetAsync($"/agents/rates?pcId={pcId}");
+                 var json = await response.Content.ReadAsStringAsync();
+                 
+                 if (response.IsSuccessStatusCode) 
+                 {
+                     _logger.LogInformation($"ApiService: GetRates Success. Raw length: {json.Length}");
+                     return JsonConvert.DeserializeObject<List<RateDto>>(json) ?? new List<RateDto>();
+                 }
+                 _logger.LogWarning($"ApiService: GetRates FAILED [{response.StatusCode}]. Raw: {json}");
+             } 
+             catch (Exception ex) 
+             {
+                 _logger.LogError(ex, "ApiService: GetRates Exception");
+             }
+             return new List<RateDto>();
+        }
+
+        public async Task<List<BundleDto>> GetBundlesAsync(string pcId)
+        {
+             try 
+             {
+                 _logger.LogInformation($"ApiService: Fetching bundles for PC {pcId}");
+                 var response = await _httpClient.GetAsync($"/agents/bundles?pcId={pcId}");
+                 var json = await response.Content.ReadAsStringAsync();
+                 
+                 if (response.IsSuccessStatusCode) 
+                 {
+                     _logger.LogInformation($"ApiService: GetBundles Success. Raw length: {json.Length}");
+                     return JsonConvert.DeserializeObject<List<BundleDto>>(json) ?? new List<BundleDto>();
+                 }
+                 _logger.LogWarning($"ApiService: GetBundles FAILED [{response.StatusCode}]. Raw: {json}");
+             } 
+             catch (Exception ex) 
+             {
+                 _logger.LogError(ex, "ApiService: GetBundles Exception");
+             }
+             return new List<BundleDto>();
+        }
+
+        public async Task<PurchaseResponse> PurchaseAsync(string pcId, string userId, PurchaseRequestPayload payload)
+        {
+             try
+             {
+                 var body = new 
+                 {
+                     pcId,
+                     userId,
+                     type = payload.Type, // "RATE" or "BUNDLE"
+                     itemId = payload.ItemId,
+                     paymentMethod = payload.PaymentMethod
+                 };
+                 
+                 var content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+                 var response = await _httpClient.PostAsync("/agents/purchase", content);
+                 var responseString = await response.Content.ReadAsStringAsync();
+
+                 if (response.IsSuccessStatusCode)
+                 {
+                     var jObj = JObject.Parse(responseString);
+                     return new PurchaseResponse 
+                     { 
+                         Success = true, 
+                         Message = jObj["message"]?.ToString() ?? "Compra realizada con éxito", 
+                         NewBalance = jObj["newBalance"]?.Value<decimal>() ?? 0 
+                     };
+                 }
+
+                 // Parse error
+                 var errorMsg = "Error desconocido";
+                 try {
+                     var jObj = JObject.Parse(responseString);
+                     errorMsg = jObj["message"]?.ToString() ?? errorMsg;
+                 } catch {}
+
+                 return new PurchaseResponse { Success = false, Message = errorMsg };
+             }
+             catch (Exception ex)
+             {
+                 return new PurchaseResponse { Success = false, Message = ex.Message };
+             }
+        }
     }
 }

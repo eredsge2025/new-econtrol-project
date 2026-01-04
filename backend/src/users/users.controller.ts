@@ -21,8 +21,8 @@ export class UsersController {
     constructor(private usersService: UsersService) { }
 
     @Get()
-    findAll(@Query('lanId') lanId?: string) {
-        return this.usersService.findAll(lanId);
+    findAll(@Query('lanId') lanId?: string, @Query('q') q?: string) {
+        return this.usersService.findAll(lanId, q);
     }
 
     @Post()

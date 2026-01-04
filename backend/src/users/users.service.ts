@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
     constructor(private prisma: PrismaService) { }
 
-    async findAll(lanId?: string): Promise<UserEntity[]> {
+    async findAll(lanId?: string, q?: string): Promise<UserEntity[]> {
         const whereClause: any = {};
 
         if (lanId) {
@@ -25,6 +25,14 @@ export class UsersService {
                         }
                     }
                 }
+            ];
+        }
+
+        if (q) {
+            whereClause.OR = [
+                ...(whereClause.OR || []),
+                { username: { contains: q } }, // Case insensitive by default in some DBs, strict in others. Prisma usually requires mode: 'insensitive'
+                { email: { contains: q } }
             ];
         }
 

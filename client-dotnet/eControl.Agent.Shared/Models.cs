@@ -137,7 +137,10 @@ namespace eControl.Agent.Shared
         UserAlert,
         GetPcInfo,
         SessionUpdate,
-        GetSessionStatus
+        GetSessionStatus,
+        GetRates,
+        GetBundles,
+        PurchaseRequest
     }
 
     public class PipeMessage
@@ -154,5 +157,46 @@ namespace eControl.Agent.Shared
         public DateTime? StartedAt { get; set; }
         public double RemainingSeconds { get; set; }
         public string? ActiveUser { get; set; }
+    }
+
+    public class RateDto
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; } = string.Empty;
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+        [JsonProperty("price")]
+        public decimal Price { get; set; }
+        [JsonProperty("minutes")]
+        public int Minutes { get; set; }
+    }
+
+    public class BundleDto
+    {
+        [JsonProperty("id")]
+        public string Id { get; set; } = string.Empty;
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+        [JsonProperty("price")]
+        public decimal Price { get; set; }
+        [JsonProperty("minutes")]
+        public int Minutes { get; set; }
+        [JsonProperty("coins")]
+        public int Coins { get; set; }
+    }
+
+    public class PurchaseRequestPayload
+    {
+        public string ItemId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public string Type { get; set; } = "RATE"; // RATE or BUNDLE
+        public string PaymentMethod { get; set; } = "BALANCE";
+    }
+
+    public class PurchaseResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public decimal NewBalance { get; set; }
     }
 }

@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { PcsService } from './pcs.service';
 import { PcsController } from './pcs.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { PcsMonitorService } from './pcs-monitor.service';
 import { PcsGateway } from './pcs.gateway';
+import { SessionsModule } from '../sessions/sessions.module';
 
 @Module({
-    imports: [PrismaModule],
+    imports: [PrismaModule, forwardRef(() => SessionsModule)],
     controllers: [PcsController],
     providers: [PcsService, PcsMonitorService, PcsGateway],
     exports: [PcsService, PcsGateway],

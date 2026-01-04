@@ -229,8 +229,11 @@ export const rateSchedulesApi = {
 };
 
 export const usersApi = {
-    getAll: async (lanId?: string) => {
-        const params = lanId ? { lanId } : {};
+    getAll: async (lanId?: string, q?: string) => {
+        const params: any = {};
+        if (lanId) params.lanId = lanId;
+        if (q) params.q = q;
+
         const { data } = await api.get('/users', { params });
         return data;
     },

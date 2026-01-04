@@ -109,4 +109,9 @@ export class PcsController {
     pcLogout(@Param('id') id: string) {
         return this.pcsService.pcLogout(id);
     }
+    @Post('pcs/:id/start')
+    @UseGuards(ApiKeyGuard)
+    startSession(@Param('id') id: string) {
+        return this.pcsService.startSession(id);
+    }
 }

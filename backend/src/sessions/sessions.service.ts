@@ -584,8 +584,6 @@ export class SessionsService {
             ] : []),
 
             // Liberar PC
-
-            // Liberar PC
             this.prisma.pC.update({
                 where: { id: session.pcId },
                 data: {
