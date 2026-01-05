@@ -10,3 +10,4 @@ C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Share
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\refint\eControl.Agent.Shared.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.pdb
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\ref\eControl.Agent.Shared.dll
+C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Debug\net9.0\eControl.Agent.Shared.sourcelink.json

@@ -19,41 +19,29 @@ namespace eControl.Agent.UI
             Log("UI Starting...");
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                var mainVm = new MainWindowViewModel();
-                desktop.MainWindow = new MainWindow
+                try 
                 {
-                    DataContext = mainVm
-                };
-            }
-
-            // V3.5 Triple Watchdog: UI vigila al Launcher
-            System.Threading.Tasks.Task.Run(async () =>
-            {
-                Log("UI Watchdog Started.");
-                while (true)
-                {
-                    try
+                    Log("Instantiating MainWindowViewModel...");
+                    var mainVm = new MainWindowViewModel();
+                    
+                    Log("Instantiating MainWindow...");
+                    desktop.MainWindow = new MainWindow
                     {
-                        var launcherName = "agent-launcher";
-                        var processes = System.Diagnostics.Process.GetProcessesByName(launcherName);
-                        if (processes.Length == 0)
-                        {
-                            Log("UI Watchdog: agent-launcher NOT FOUND. Relaunching...");
-                            var launcherPath = System.IO.Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "agent-launcher.exe");
-                            if (System.IO.File.Exists(launcherPath))
-                            {
-                                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                                {
-                                    FileName = launcherPath,
-                                    UseShellExecute = true
-                                });
-                            }
-                        }
-                    }
-                    catch (System.Exception ex) { Log($"UI Watchdog Error: {ex.Message}"); }
-                    await System.Threading.Tasks.Task.Delay(1000); // Ciclo agresivo de 1 segundo
+                        DataContext = mainVm
+                    };
+                    Log("MainWindow Created Successfully.");
                 }
-            });
+                catch (System.Exception ex)
+                {
+                    Log($"CRITICAL CRASH during MainWindow creation: {ex.Message}");
+                    Log($"Stack: {ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        Log($"Inner: {ex.InnerException.Message}");
+                    }
+                    throw; // Re-throw to allow default crash handling but we got the logs
+                }
+            }
 
             base.OnFrameworkInitializationCompleted();
         }

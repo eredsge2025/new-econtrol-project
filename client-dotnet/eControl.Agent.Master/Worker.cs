@@ -115,9 +115,14 @@ namespace eControl.Agent.Master
                             }
 
                             string activeUser = "";
+                            decimal userBalance = 0;
                             if (pcData.activeUser != null && pcData.activeUser.Type != Newtonsoft.Json.Linq.JTokenType.Null)
                             {
                                 activeUser = (string)pcData.activeUser.username ?? (string)pcData.activeUser.email ?? "User";
+                                if (pcData.activeUser.balance != null && pcData.activeUser.balance.Type != Newtonsoft.Json.Linq.JTokenType.Null)
+                                {
+                                    userBalance = (decimal)pcData.activeUser.balance;
+                                }
                             }
 
                             return JsonConvert.SerializeObject(new SessionStatusResponse
@@ -128,6 +133,7 @@ namespace eControl.Agent.Master
                                 StartedAt = startedAt,
                                 RemainingSeconds = remaining,
                                 ActiveUser = activeUser,
+                                UserBalance = userBalance
                             });
                         }
                     }

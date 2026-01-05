@@ -1,0 +1,540 @@
+<Window xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:eControl.Agent.UI.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="750"
+    x:Class="eControl.Agent.UI.Views.DashboardWindow"
+    x:DataType="vm:DashboardViewModel"
+    Title="Dashboard"
+    Width="1200" Height="750"
+    WindowStartupLocation="CenterScreen"
+    SystemDecorations="None"
+    Topmost="True"
+    Background="Transparent"
+    TransparencyLevelHint="Transparent"
+    CanResize="False">
+
+    <Window.Styles>
+        <!-- Estilo para botones hover con efecto gaming -->
+        <Style Selector="Button.gaming-primary">
+            <Setter Property="Background" Value="#FF0A84FF" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
+                    <BrushTransition Property="Background" Duration="0:0:0.2" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.gaming-primary:pointerover">
+            <Setter Property="Background" Value="#FF1E90FF" />
+            <Setter Property="RenderTransform" Value="scale(1.02)" />
+        </Style>
+
+        <Style Selector="Button.gaming-secondary">
+            <Setter Property="Background" Value="#1A1F2E" />
+            <Setter Property="Foreground" Value="#8B9DC3" />
+            <Setter Property="BorderBrush" Value="#2A3447" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.gaming-secondary:pointerover">
+            <Setter Property="Background" Value="#242B3D" />
+            <Setter Property="BorderBrush" Value="#0A84FF" />
+        </Style>
+
+        <Style Selector="Button.store-item">
+            <Setter Property="Background" Value="#151922" />
+            <Setter Property="BorderBrush" Value="#1E2532" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
+                    <BrushTransition Property="Background" Duration="0:0:0.2" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.store-item:pointerover">
+            <Setter Property="Background" Value="#1A2030" />
+            <Setter Property="BorderBrush" Value="#0A84FF" />
+            <Setter Property="RenderTransform" Value="translateY(-4px)" />
+        </Style>
+    </Window.Styles>
+
+    <Panel>
+        <!-- Fondo con gradiente gaming -->
+        <Border>
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Color="#0F1419" Offset="0" />
+                    <GradientStop Color="#1A1F2E" Offset="0.5" />
+                    <GradientStop Color="#0F1419" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Contenedor principal con efecto glassmorphism -->
+        <Border Background="#DD0A0F14"
+            CornerRadius="24"
+            BoxShadow="0 20 60 0 #AA000000, inset 0 1 0 0 #33FFFFFF"
+            Margin="15"
+            ClipToBounds="True">
+
+            <!-- Borde con gradiente sutil -->
+            <Border BorderThickness="1" CornerRadius="24">
+                <Border.BorderBrush>
+                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                        <GradientStop Color="#330A84FF" Offset="0" />
+                        <GradientStop Color="#11FFFFFF" Offset="0.5" />
+                        <GradientStop Color="#330A84FF" Offset="1" />
+                    </LinearGradientBrush>
+                </Border.BorderBrush>
+
+                <Grid RowDefinitions="Auto,*" Margin="35">
+
+                    <!-- HEADER PREMIUM -->
+                    <Border Background="#11FFFFFF" CornerRadius="16" Padding="25,20"
+                        Margin="0,0,0,25">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+
+                            <!-- Logo/Icon Area -->
+                            <Border Width="50" Height="50" CornerRadius="12" Background="#0A84FF"
+                                Margin="0,0,20,0">
+                                <TextBlock Text="⚡" FontSize="28" HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
+
+                            <!-- Welcome Section -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                                <TextBlock Text="BIENVENIDO DE VUELTA"
+                                    FontSize="11" FontWeight="Bold"
+                                    Foreground="#6B7A99"
+                                    LetterSpacing="2" />
+                                <TextBlock Text="{Binding DisplayName}"
+                                    FontSize="28" FontWeight="Black"
+                                    Foreground="White"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <!-- Close Button -->
+                            <Button Grid.Column="2"
+                                Click="CloseWindow_Click"
+                                Classes="gaming-secondary"
+                                Width="45" Height="45"
+                                Padding="0"
+                                VerticalAlignment="Center">
+                                <TextBlock Text="✕" FontSize="18" FontWeight="Bold" />
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- MAIN CONTENT -->
+                    <Grid Grid.Row="1" ColumnDefinitions="340,*">
+
+                        <!-- ============= LEFT PANEL: BALANCE & ACTIONS ============= -->
+                        <StackPanel Grid.Column="0" Spacing="20" Margin="0,0,25,0">
+
+                            <!-- Balance Card con efecto premium -->
+                            <Border Background="#151922"
+                                CornerRadius="20"
+                                Padding="30,25"
+                                BoxShadow="0 10 30 0 #66000000, inset 0 1 0 0 #220A84FF">
+                                <Border.BorderBrush>
+                                    <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                        <GradientStop Color="#440A84FF" Offset="0" />
+                                        <GradientStop Color="#1100FFAA" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.BorderBrush>
+                                <Border BorderThickness="1" CornerRadius="20">
+                                    <StackPanel Spacing="15">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel>
+                                                <TextBlock Text="TU SALDO"
+                                                    FontSize="10" FontWeight="Black"
+                                                    Foreground="#6B7A99"
+                                                    LetterSpacing="1.5" />
+                                                <TextBlock Text="DISPONIBLE"
+                                                    FontSize="9" FontWeight="Bold"
+                                                    Foreground="#4A5568"
+                                                    LetterSpacing="1" />
+                                            </StackPanel>
+                                            <Border Grid.Column="1"
+                                                Width="8" Height="8"
+                                                CornerRadius="4"
+                                                Background="#00FF88"
+                                                VerticalAlignment="Top"
+                                                Margin="0,5,0,0" />
+                                        </Grid>
+
+                                        <TextBlock
+                                            Text="{Binding UserBalance, StringFormat='{}{0:C}'}"
+                                            FontSize="42" FontWeight="Black"
+                                            Foreground="White"
+                                            Margin="0,5,0,0" />
+
+                                        <!-- Progress bar decorativo -->
+                                        <Border Height="4" CornerRadius="2" Background="#1A1F2E"
+                                            Margin="0,10,0,0">
+                                            <Border Width="220" Height="4" CornerRadius="2"
+                                                HorizontalAlignment="Left">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0%,50%"
+                                                        EndPoint="100%,50%">
+                                                        <GradientStop Color="#0A84FF" Offset="0" />
+                                                        <GradientStop Color="#00FF88" Offset="1" />
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                            </Border>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </Border>
+
+                            <!-- Play Button PREMIUM -->
+                            <Border BoxShadow="0 10 25 0 #550A84FF" CornerRadius="12">
+                                <Button Command="{Binding StartSessionCommand}"
+                                    Classes="gaming-primary"
+                                    HorizontalAlignment="Stretch"
+                                    Height="90"
+                                    Padding="0">
+                                    <Border CornerRadius="12" ClipToBounds="True">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,0%"
+                                                EndPoint="100%,100%">
+                                                <GradientStop Color="#0A84FF" Offset="0" />
+                                                <GradientStop Color="#0066CC" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Grid>
+                                            <!-- Efecto de brillo -->
+                                            <Border Background="#11FFFFFF"
+                                                VerticalAlignment="Top"
+                                                Height="30"
+                                                Opacity="0.5" />
+
+                                            <StackPanel VerticalAlignment="Center"
+                                                HorizontalAlignment="Center"
+                                                Spacing="8">
+                                                <TextBlock Text="▶ JUGAR AHORA"
+                                                    FontSize="20" FontWeight="Black"
+                                                    HorizontalAlignment="Center"
+                                                    LetterSpacing="1" />
+                                                <TextBlock Text="Usar tiempo disponible"
+                                                    FontSize="11" Opacity="0.8"
+                                                    HorizontalAlignment="Center"
+                                                    FontWeight="Medium" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </Border>
+
+                            <!-- Error Message -->
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                Foreground="#FF4757"
+                                FontSize="12"
+                                FontWeight="Medium"
+                                TextWrapping="Wrap"
+                                HorizontalAlignment="Center"
+                                Margin="10,5" />
+
+                            <!-- Stats Cards -->
+                            <Grid ColumnDefinitions="*,*">
+                                <Border Background="#11FFFFFF" CornerRadius="14" Padding="15,12"
+                                    Margin="0,0,6,0">
+                                    <StackPanel Spacing="5">
+                                        <TextBlock Text="SESIONES"
+                                            FontSize="9" FontWeight="Bold"
+                                            Foreground="#6B7A99"
+                                            LetterSpacing="1" />
+                                        <TextBlock Text="24"
+                                            FontSize="22" FontWeight="Black"
+                                            Foreground="#00FF88" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Column="1" Background="#11FFFFFF" CornerRadius="14"
+                                    Padding="15,12" Margin="6,0,0,0">
+                                    <StackPanel Spacing="5">
+                                        <TextBlock Text="TIEMPO TOTAL"
+                                            FontSize="9" FontWeight="Bold"
+                                            Foreground="#6B7A99"
+                                            LetterSpacing="1" />
+                                        <TextBlock Text="48h"
+                                            FontSize="22" FontWeight="Black"
+                                            Foreground="#FFB800" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <Separator Height="1" Background="#1E2532" Margin="0,10" />
+
+                            <!-- Logout Button -->
+                            <Button Command="{Binding RequestLogoutCommand}"
+                                Classes="gaming-secondary"
+                                HorizontalAlignment="Stretch"
+                                Height="55">
+                                <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Spacing="10">
+                                    <TextBlock Text="⏻" FontSize="16" VerticalAlignment="Center" />
+                                    <TextBlock Text="CERRAR SESIÓN"
+                                        FontSize="13" FontWeight="Bold"
+                                        VerticalAlignment="Center"
+                                        LetterSpacing="0.5" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- ============= RIGHT PANEL: STORE ============= -->
+                        <Border Grid.Column="1"
+                            Background="#0D1117"
+                            CornerRadius="20"
+                            Padding="30"
+                            BoxShadow="inset 0 2 10 0 #22000000">
+                            <Border.BorderBrush>
+                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                    <GradientStop Color="#221E2532" Offset="0" />
+                                    <GradientStop Color="#110A84FF" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.BorderBrush>
+                            <Border BorderThickness="1" CornerRadius="20">
+                                <Grid RowDefinitions="Auto,*">
+
+                                    <!-- Store Header -->
+                                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,25">
+                                        <StackPanel>
+                                            <TextBlock Text="⚡ TIENDA DE TIEMPO"
+                                                FontWeight="Black"
+                                                Foreground="White"
+                                                FontSize="20"
+                                                LetterSpacing="0.5" />
+                                            <TextBlock Text="Mejora tu experiencia de juego"
+                                                FontSize="12"
+                                                Foreground="#6B7A99"
+                                                Margin="0,5,0,0" />
+                                        </StackPanel>
+
+                                        <Border Grid.Column="1"
+                                            Background="#0A84FF"
+                                            CornerRadius="10"
+                                            Padding="12,6">
+                                            <TextBlock Text="PROMOCIONES"
+                                                FontSize="9" FontWeight="Black"
+                                                Foreground="White"
+                                                LetterSpacing="1" />
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Store Content -->
+                                    <ScrollViewer Grid.Row="1">
+                                        <StackPanel Spacing="25">
+
+                                            <!-- Rates Section -->
+                                            <StackPanel Spacing="15">
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <Border Width="4" Height="20"
+                                                        Background="#0A84FF"
+                                                        CornerRadius="2"
+                                                        Margin="0,0,12,0" />
+                                                    <TextBlock Grid.Column="1"
+                                                        Text="TARIFAS RÁPIDAS"
+                                                        FontWeight="Black"
+                                                        Foreground="#8B9DC3"
+                                                        FontSize="13"
+                                                        LetterSpacing="1"
+                                                        VerticalAlignment="Center" />
+                                                </Grid>
+
+                                                <ItemsControl ItemsSource="{Binding Rates}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Columns="2" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button
+                                                                Command="{Binding ((vm:DashboardViewModel)DataContext).PurchaseRateCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                Classes="store-item"
+                                                                HorizontalAlignment="Stretch"
+                                                                Margin="4"
+                                                                Padding="15,12">
+                                                                <Grid
+                                                                    ColumnDefinitions="Auto,*,Auto">
+                                                                    <!-- Icon -->
+                                                                    <Border Width="40" Height="40"
+                                                                        CornerRadius="10"
+                                                                        Margin="0,0,12,0">
+                                                                        <Border.Background>
+                                                                            <LinearGradientBrush
+                                                                                StartPoint="0%,0%"
+                                                                                EndPoint="100%,100%">
+                                                                                <GradientStop
+                                                                                    Color="#220A84FF"
+                                                                                    Offset="0" />
+                                                                                <GradientStop
+                                                                                    Color="#1100AAFF"
+                                                                                    Offset="1" />
+                                                                            </LinearGradientBrush>
+                                                                        </Border.Background>
+                                                                        <TextBlock Text="⏱"
+                                                                            FontSize="20"
+                                                                            HorizontalAlignment="Center"
+                                                                            VerticalAlignment="Center" />
+                                                                    </Border>
+
+                                                                    <!-- Info -->
+                                                                    <StackPanel Grid.Column="1"
+                                                                        VerticalAlignment="Center"
+                                                                        Spacing="2"
+                                                                        Margin="0,0,10,0">
+                                                                        <TextBlock
+                                                                            Text="{Binding Name}"
+                                                                            FontWeight="Bold"
+                                                                            Foreground="White"
+                                                                            FontSize="14" />
+                                                                        <TextBlock
+                                                                            Text="{Binding Minutes, StringFormat='{}{0} Min'}"
+                                                                            Foreground="#6B7A99"
+                                                                            FontSize="11" />
+                                                                    </StackPanel>
+
+                                                                    <!-- Price -->
+                                                                    <TextBlock Grid.Column="2"
+                                                                        Text="{Binding Price, StringFormat='{}{0:C}'}"
+                                                                        FontWeight="Black"
+                                                                        Foreground="#00FF88"
+                                                                        FontSize="16"
+                                                                        VerticalAlignment="Center" />
+                                                                </Grid>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                            <!-- Bundles Section -->
+                                            <StackPanel Spacing="15" Margin="0,10,0,0">
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <Border Width="4" Height="20"
+                                                        Background="#FFB800"
+                                                        CornerRadius="2"
+                                                        Margin="0,0,12,0" />
+                                                    <TextBlock Grid.Column="1"
+                                                        Text="PAQUETES PREMIUM"
+                                                        FontWeight="Black"
+                                                        Foreground="#8B9DC3"
+                                                        FontSize="13"
+                                                        LetterSpacing="1"
+                                                        VerticalAlignment="Center" />
+                                                    <Border Grid.Column="2"
+                                                        Background="#FFB80022"
+                                                        CornerRadius="8"
+                                                        Padding="10,4">
+                                                        <TextBlock Text="⭐ MEJOR VALOR"
+                                                            FontSize="9" FontWeight="Black"
+                                                            Foreground="#FFB800"
+                                                            LetterSpacing="0.5" />
+                                                    </Border>
+                                                </Grid>
+
+                                                <ItemsControl ItemsSource="{Binding Bundles}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Columns="2" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button
+                                                                Command="{Binding ((vm:DashboardViewModel)DataContext).PurchaseBundleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                Classes="store-item"
+                                                                HorizontalAlignment="Stretch"
+                                                                Margin="4"
+                                                                Padding="15,12">
+                                                                <Grid
+                                                                    ColumnDefinitions="Auto,*,Auto">
+                                                                    <!-- Icon Premium -->
+                                                                    <Border Width="40" Height="40"
+                                                                        CornerRadius="10"
+                                                                        Margin="0,0,12,0">
+                                                                        <Border.Background>
+                                                                            <LinearGradientBrush
+                                                                                StartPoint="0%,0%"
+                                                                                EndPoint="100%,100%">
+                                                                                <GradientStop
+                                                                                    Color="#22FFB800"
+                                                                                    Offset="0" />
+                                                                                <GradientStop
+                                                                                    Color="#11FF8800"
+                                                                                    Offset="1" />
+                                                                            </LinearGradientBrush>
+                                                                        </Border.Background>
+                                                                        <TextBlock Text="🎁"
+                                                                            FontSize="20"
+                                                                            HorizontalAlignment="Center"
+                                                                            VerticalAlignment="Center" />
+                                                                    </Border>
+
+                                                                    <!-- Info -->
+                                                                    <StackPanel Grid.Column="1"
+                                                                        VerticalAlignment="Center"
+                                                                        Spacing="2"
+                                                                        Margin="0,0,10,0">
+                                                                        <TextBlock
+                                                                            Text="{Binding Name}"
+                                                                            FontWeight="Bold"
+                                                                            Foreground="White"
+                                                                            FontSize="14" />
+                                                                        <TextBlock
+                                                                            Text="{Binding Minutes, StringFormat='{}{0} Min'}"
+                                                                            Foreground="#6B7A99"
+                                                                            FontSize="11" />
+                                                                    </StackPanel>
+
+                                                                    <!-- Price -->
+                                                                    <TextBlock Grid.Column="2"
+                                                                        Text="{Binding Price, StringFormat='{}{0:C}'}"
+                                                                        FontWeight="Black"
+                                                                        Foreground="#FFB800"
+                                                                        FontSize="16"
+                                                                        VerticalAlignment="Center" />
+                                                                </Grid>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </Border>
+
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
+    </Panel>
+</Window>

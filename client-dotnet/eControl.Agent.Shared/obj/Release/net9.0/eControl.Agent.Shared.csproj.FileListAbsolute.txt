@@ -11,3 +11,6 @@ C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Share
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Release\net9.0\ref\eControl.Agent.Shared.dll
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Release\net9.0\eControl.Agent.Shared.csproj.AssemblyReference.cache
 C:\Users\EREDS\Documents\new econtrol project\client-dotnet\eControl.Agent.Shared\obj\Release\net9.0\eControl.Agent.Shared.sourcelink.json
+c:\Users\EREDS\Documents\new econtrol project\client-dotnet\Release_V2\eControl.Agent.Shared.deps.json
+c:\Users\EREDS\Documents\new econtrol project\client-dotnet\Release_V2\eControl.Agent.Shared.dll
+c:\Users\EREDS\Documents\new econtrol project\client-dotnet\Release_V2\eControl.Agent.Shared.pdb

@@ -157,6 +157,7 @@ namespace eControl.Agent.Shared
         public DateTime? StartedAt { get; set; }
         public double RemainingSeconds { get; set; }
         public string? ActiveUser { get; set; }
+        public decimal UserBalance { get; set; }
     }
 
     public class RateDto

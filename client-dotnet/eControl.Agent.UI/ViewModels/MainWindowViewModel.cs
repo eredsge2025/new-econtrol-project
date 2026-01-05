@@ -15,6 +15,7 @@ namespace eControl.Agent.UI.ViewModels
         private readonly NamedPipeClientService _pipeClient;
         private System.Timers.Timer _idleTimer;
         private string _currentUserId = string.Empty;
+        private Views.DashboardWindow? _dashboardWindow;
 
         [ObservableProperty] private bool _showLoginForm;
         [ObservableProperty] private bool _isLoggedIn;
@@ -36,7 +37,6 @@ namespace eControl.Agent.UI.ViewModels
         [ObservableProperty] private string _displayName = "";
         [ObservableProperty] private bool _isSessionActive;
         [ObservableProperty] private bool _isPillVisible;
-        [ObservableProperty] private bool _isDashboardVisible;
         [ObservableProperty] private string _remainingTime = "00:00:00";
         
         [ObservableProperty] private string _windowState = "FullScreen";
@@ -108,7 +108,7 @@ namespace eControl.Agent.UI.ViewModels
                                               // Transition to Active
                                               IsSessionActive = true;
                                               IsLoggedIn = true;
-                                              IsDashboardVisible = false;
+                                              HideDashboard();
                                               IsPillVisible = true;
                                               
                                               // Set Mini Mode
@@ -138,6 +138,13 @@ namespace eControl.Agent.UI.ViewModels
                                          {
                                              DisplayName = status.ActiveUser;
                                          }
+                                         
+                                         // Sync Balance
+                                         UserBalance = status.UserBalance;
+                                         if (_dashboardWindow?.DataContext is DashboardViewModel dvm)
+                                         {
+                                             dvm.UserBalance = UserBalance;
+                                         }
                                      }
                                      else
                                      {
@@ -151,7 +158,7 @@ namespace eControl.Agent.UI.ViewModels
                                              // Return to Dashboard (Authenticated) or Login (Guest)
                                              if (IsLoggedIn)
                                              {
-                                                 IsDashboardVisible = true;
+                                                 ShowDashboard();
                                                  Background = "#1A1A1A";
                                                  WindowState = "FullScreen";
                                                  WindowWidth = double.NaN;
@@ -237,14 +244,11 @@ namespace eControl.Agent.UI.ViewModels
                     UserBalance = response.User?.Balance ?? 0;
                     LogToFile($"LoginAsync: Success. User={DisplayName} (ID={_currentUserId}), Balance={UserBalance}");
                     
-                    // Show Dashboard, Hide Pill, Keep Background Opaque
-                    IsDashboardVisible = true;
+                    // Show Dashboard
+                    ShowDashboard();
                     IsPillVisible = false;
                     Background = "#1A1A1A";
                     WindowState = "FullScreen";
-
-                    // Load Store Items immediately
-                    _ = LoadStoreItems();
                 }
                 else
                 {
@@ -276,8 +280,8 @@ namespace eControl.Agent.UI.ViewModels
                 {
                     IsSessionActive = true;
                     
-                    // Switch to Pill Mode
-                    IsDashboardVisible = false;
+                    // Transition to Pill Mode
+                    HideDashboard();
                     IsPillVisible = true;
                     
                     // Resize to Pill (Float Mode)
@@ -315,7 +319,7 @@ namespace eControl.Agent.UI.ViewModels
             try
             {
                 // 1. Mostrar Loader y ocultar todo lo demás
-                IsDashboardVisible = false;
+                HideDashboard();
                 IsPillVisible = false;
                 
                 // Forzar pantalla completa y fondo opaco
@@ -382,9 +386,10 @@ namespace eControl.Agent.UI.ViewModels
              Password = "";
              ErrorMessage = "";
              IsLoggedIn = false;
-             ShowLoginForm = false;
+             // Ensure Login/Idle screen is visible when reset, mainly for "Guest Session End" scenarios
+             ShowLoginForm = true;
              IsSessionActive = false;
-             IsDashboardVisible = false;
+             HideDashboard();
              IsPillVisible = false;
              DisplayName = "";
              UserBalance = 0;
@@ -395,94 +400,67 @@ namespace eControl.Agent.UI.ViewModels
              WindowWidth = double.NaN;
              Background = "#1A1A1A";
         }
-        // Purchase Logic
-        public ObservableCollection<RateDto> Rates { get; } = new();
-        public ObservableCollection<BundleDto> Bundles { get; } = new();
-
-        [ObservableProperty] private bool _isPurchaseLoading;
-
-        public async Task LoadStoreItems()
-        {
-            if (IsPurchaseLoading) return;
-            IsPurchaseLoading = true;
-            LogToFile("LoadStoreItems: Fetching rates and bundles...");
-            try
-            {
-                var rates = await _pipeClient.GetRatesAsync();
-                var bundles = await _pipeClient.GetBundlesAsync();
-
-                LogToFile($"LoadStoreItems: Received {rates.Count} rates and {bundles.Count} bundles.");
-
-                Rates.Clear();
-                foreach(var r in rates) Rates.Add(r);
-
-                Bundles.Clear();
-                foreach(var b in bundles) Bundles.Add(b);
-            }
-            catch (Exception ex)
-            {
-                LogToFile($"LoadStoreItems: Exception: {ex.Message}");
-            }
-            finally
-            {
-                IsPurchaseLoading = false;
-            }
-        }
-
         [RelayCommand]
-        public async Task PurchaseRate(RateDto rate)
+        public void ToggleDashboard()
         {
-             await PurchaseItem(rate.Id, "RATE", rate.Name, rate.Price);
-        }
-
-        [RelayCommand]
-        public async Task PurchaseBundle(BundleDto bundle)
-        {
-             await PurchaseItem(bundle.Id, "BUNDLE", bundle.Name, bundle.Price);
-        }
-
-        private async Task PurchaseItem(string itemId, string type, string itemName, decimal price)
-        {
-            if (IsPurchaseLoading) return;
-            IsPurchaseLoading = true;
-            ErrorMessage = $"Procesando compra de {itemName}...";
-            LogToFile($"PurchaseItem: Buying {itemName} ({type}) ID={itemId}");
-
-            try 
+            if (IsLoggedIn)
             {
-                var response = await _pipeClient.PurchaseAsync(itemId, type, _currentUserId);
-                LogToFile($"PurchaseItem: Response success={response.Success}, NewBalance={response.NewBalance}");
-
-                if (response.Success)
-                {
-                    ErrorMessage = ""; 
-                    UserBalance = response.NewBalance;
-                    
-                    // Auto-Unlock UI locally
-                    IsSessionActive = true;
-                    IsDashboardVisible = false;
-                    IsPillVisible = true;
-                    Background = "Transparent";
-                    WindowState = "Normal";
-                    WindowWidth = 450;
-                    WindowHeight = 100;
-                    VerticalAlignment = "Top";
-                    HorizontalAlignment = "Center";
-                }
+                if (_dashboardWindow?.IsVisible == true)
+                    HideDashboard();
                 else
+                    ShowDashboard();
+            }
+        }
+
+        private void ShowDashboard()
+        {
+            if (!IsLoggedIn) return;
+
+            if (_dashboardWindow == null)
+            {
+                var vm = new DashboardViewModel(_currentUserId, PcName, DisplayName, UserBalance);
+                vm.OnSessionStarted += () => 
                 {
-                    ErrorMessage = $"Error: {response.Message}";
-                }
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => 
+                    {
+                        _ = StartSessionAsync();
+                    });
+                };
+
+                vm.OnBalanceUpdated += (newBalance) =>
+                {
+                    UserBalance = newBalance;
+                };
+
+                vm.OnLogoutRequested += () =>
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => 
+                    {
+                        _ = LogoutAsync();
+                    });
+                };
+                
+                _dashboardWindow = new Views.DashboardWindow
+                {
+                    DataContext = vm
+                };
             }
-            catch (Exception ex)
+            else
             {
-                LogToFile($"PurchaseItem: Exception: {ex.Message}");
-                ErrorMessage = $"Error: {ex.Message}";
+                // Update basic info in case it changed
+                var vm = (DashboardViewModel)_dashboardWindow.DataContext!;
+                vm.DisplayName = DisplayName;
+                vm.UserBalance = UserBalance;
             }
-            finally 
-            {
-                IsPurchaseLoading = false;
-            }
+
+            _dashboardWindow.Show();
+            _dashboardWindow.Activate();
+            _dashboardWindow.Topmost = true; // Ensure visibility over Lock Screen
+        }
+
+        private void HideDashboard()
+        {
+            _dashboardWindow?.Hide();
         }
 
         // Trigger loading on Login Success
