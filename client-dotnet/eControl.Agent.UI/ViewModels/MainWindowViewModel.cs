@@ -107,7 +107,10 @@ namespace eControl.Agent.UI.ViewModels
                                          {
                                               // Transition to Active
                                               IsSessionActive = true;
-                                              IsLoggedIn = true; ShowLoginForm = false; HideDashboard();
+                                              // Fix: Only set IsLoggedIn if we actually have a user (Guest sessions should be IsLoggedIn=false)
+                                              IsLoggedIn = !string.IsNullOrEmpty(status.ActiveUser); 
+                                              ShowLoginForm = false; 
+                                              HideDashboard();
                                               IsPillVisible = true;
                                               
                                               // Set Mini Mode (Normal + CodeBehind Position)

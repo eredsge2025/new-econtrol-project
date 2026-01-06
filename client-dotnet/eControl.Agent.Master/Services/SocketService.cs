@@ -42,13 +42,9 @@ namespace eControl.Agent.Master.Services
                 LogToFile("✅ Socket Connected to Namespace /pcs!");
                 if (!string.IsNullOrEmpty(_pcId))
                 {
-                    // If we have pcId, we might be reconnecting. 
-                    // We need active LanId. If ConnectAsync wasn't called (restart?), config is used.
-                    // But ConnectAsync sets active session vars. 
-                    // We'll rely on global vars or config.
-                    // Ideally, ConnectAsync logic handles the first registration.
-                    // This is for auto-reconnects. 
-                     // await RegisterSocketAsync(); // Logic in ConnectAsync handles this better for now.
+                    // Re-register on reconnect to ensure we join the LAN room again
+                    _logger.LogInformation("🔄 Socket Reconnected. Re-joining room for PC: {PcId}", _pcId);
+                    await RegisterSocketAsync(); 
                 }
             };
 
@@ -68,7 +64,14 @@ namespace eControl.Agent.Master.Services
             {
                 try
                 {
-                    var pcData = response.GetValue<Newtonsoft.Json.Linq.JObject>(); 
+                    // Fix: SocketIOClient v3 uses System.Text.Json by default. 
+                    // Direct deserialization to JObject fails. 
+                    // specific fix: Get as JsonElement -> Raw Text -> JObject
+                    var element = response.GetValue<System.Text.Json.JsonElement>();
+                    var jsonString = element.GetRawText();
+                    var pcData = Newtonsoft.Json.Linq.JObject.Parse(jsonString);
+
+                    // var pcData = response.GetValue<Newtonsoft.Json.Linq.JObject>(); 
                     string activeUser = pcData["activeUser"]?.Type != Newtonsoft.Json.Linq.JTokenType.Null ? (string)pcData["activeUser"]["username"] : "None";
                     _logger.LogInformation("📩 Received pc_status_update for PC: {PcId} (User: {User})", (string)pcData["id"], activeUser);
                      LogToFile($"📩 Received pc_status_update for PC: {(string)pcData["id"]} (User: {activeUser})");
@@ -154,12 +157,29 @@ namespace eControl.Agent.Master.Services
                  _logger.LogInformation("👤 Active User Node: {ActiveUser}", userName);
                  LogToFile($"👤 Active User Node: {userName}");
 
-                 if (activeUser != null)
+                 // Check for active sessions independent of user (e.g. Guest/Anonymous)
+                 bool hasActiveSession = false;
+                 var sessions = pcData["sessions"];
+                 if (sessions != null && sessions.HasValues)
                  {
-                     // Has User -> UNLOCK / UPDATE SESSION
+                     foreach (var s in sessions)
+                     {
+                         string status = (string)s["status"];
+                         if (status == "ACTIVE" || status == "PAUSED" || status == "EXPIRED")
+                         {
+                             hasActiveSession = true;
+                             break;
+                         }
+                     }
+                 }
+
+                 if (activeUser != null || hasActiveSession)
+                 {
+                     // Has User OR Active Session -> UNLOCK / UPDATE SESSION
                      string sessionData = JsonConvert.SerializeObject(pcData);
-                     _logger.LogInformation("🔓 Invoking OnSessionStarted with payload length: {Length}", sessionData.Length);
-                     LogToFile($"🔓 Invoking OnSessionStarted. Payload Len: {sessionData.Length}");
+                     // Fix CS1973: Cast dynamic args to reduce extension method ambiguity
+                     _logger.LogInformation("🔓 Invoking OnSessionStarted. HasUser: {HasUser}, HasSession: {HasSession}", (bool)(activeUser != null), hasActiveSession);
+                     LogToFile($"🔓 Invoking OnSessionStarted. HasUser: {activeUser != null}, HasSession: {hasActiveSession}");
                      OnSessionStarted?.Invoke(sessionData);
                      
                      // Trigger update for timer sync
@@ -167,9 +187,9 @@ namespace eControl.Agent.Master.Services
                  }
                  else
                  {
-                     // No User -> LOCK
-                     _logger.LogInformation("🔒 Invoking OnSessionEnded (User is null)");
-                     LogToFile("🔒 Invoking OnSessionEnded (User is null)");
+                     // No User AND No Session -> LOCK
+                     _logger.LogInformation("🔒 Invoking OnSessionEnded (No User & No Active Session)");
+                     LogToFile("🔒 Invoking OnSessionEnded (No User & No Active Session)");
                      OnSessionEnded?.Invoke(); 
                  }
             }
