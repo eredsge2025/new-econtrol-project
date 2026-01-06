@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersApi } from '@/lib/api';
+import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { usersApi, lansApi } from '@/lib/api';
 import {
     Dialog,
     DialogContent,
@@ -14,33 +14,59 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Wallet, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { User } from '@/types';
+
+import { PaymentSelector, PaymentMethod } from '@/components/ui/payment-selector';
 
 interface RechargeBalanceModalProps {
     isOpen: boolean;
     onClose: () => void;
     user: User;
+    lanId: string;
 }
 
-export function RechargeBalanceModal({ isOpen, onClose, user }: RechargeBalanceModalProps) {
+export function RechargeBalanceModal({ isOpen, onClose, user, lanId }: RechargeBalanceModalProps) {
     const [amount, setAmount] = useState<string>('');
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
+    const [selectedLanId, setSelectedLanId] = useState<string>(lanId || '');
     const [success, setSuccess] = useState(false);
     const queryClient = useQueryClient();
 
+    // Ensure we have LANs available if not passed
+    const { data: lans } = useQuery({
+        queryKey: ['lans'],
+        queryFn: lansApi.getAll,
+        enabled: !selectedLanId,
+    });
+
+    // Auto-select first LAN if not set
+    useEffect(() => {
+        if (!selectedLanId && lans?.length > 0) {
+            setSelectedLanId(lans[0].id);
+        }
+    }, [lans, selectedLanId]);
+
+    // Update internal state if prop changes
+    useEffect(() => {
+        if (lanId) setSelectedLanId(lanId);
+    }, [lanId]);
+
     const rechargeMutation = useMutation({
-        mutationFn: (rechargeAmount: number) => usersApi.recharge(user.id, rechargeAmount),
+        mutationFn: (data: { amount: number, method: string, lan: string }) => usersApi.recharge(user.id, data.amount, data.lan, data.method),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
             setSuccess(true);
-            toast.success(`Recarga de S/ ${amount} exitosa para ${user.username}`);
+            toast.success(`Recarga de S/ ${amount} exitosa para ${user.username} (${paymentMethod})`);
             setTimeout(() => {
                 handleClose();
             }, 2000);
         },
         onError: (error: any) => {
-            toast.error('Error al realizar la recarga: ' + (error.response?.data?.message || error.message));
+            console.error(error);
+            toast.error('Error al realizar la recarga: ' + (error.response?.data?.message || 'Error desconocido'));
         }
     });
 
@@ -51,12 +77,17 @@ export function RechargeBalanceModal({ isOpen, onClose, user }: RechargeBalanceM
             toast.error('Por favor, ingresa un monto válido mayor a 0');
             return;
         }
-        rechargeMutation.mutate(numAmount);
+        if (!selectedLanId) {
+            toast.error('Selecciona una Sede (LAN) para la recarga');
+            return;
+        }
+        rechargeMutation.mutate({ amount: numAmount, method: paymentMethod, lan: selectedLanId });
     };
 
     const handleClose = () => {
         setAmount('');
         setSuccess(false);
+        setPaymentMethod('CASH');
         onClose();
     };
 
@@ -64,7 +95,7 @@ export function RechargeBalanceModal({ isOpen, onClose, user }: RechargeBalanceM
 
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[500px]">
                 {!success ? (
                     <>
                         <DialogHeader>
@@ -79,6 +110,23 @@ export function RechargeBalanceModal({ isOpen, onClose, user }: RechargeBalanceM
 
                         <form onSubmit={handleRecharge} className="space-y-6 py-4">
                             <div className="space-y-4">
+                                {/* LAN SELECTOR if needed */}
+                                {(!lanId || (lans && lans.length > 1)) && (
+                                    <div className="space-y-2">
+                                        <Label>Sede (Caja)</Label>
+                                        <Select value={selectedLanId} onValueChange={setSelectedLanId}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar Sede" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {(lans || []).map((lan: any) => (
+                                                    <SelectItem key={lan.id} value={lan.id}>{lan.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
                                 <div className="space-y-2">
                                     <Label htmlFor="amount text-slate-700">Monto a recargar (S/)</Label>
                                     <div className="relative">
@@ -111,6 +159,12 @@ export function RechargeBalanceModal({ isOpen, onClose, user }: RechargeBalanceM
                                         </Button>
                                     ))}
                                 </div>
+
+                                <PaymentSelector
+                                    value={paymentMethod}
+                                    onChange={setPaymentMethod}
+                                    className="pt-2"
+                                />
 
                                 <div className="p-3 bg-indigo-50 rounded-lg flex items-start border border-indigo-100">
                                     <AlertCircle className="h-4 w-4 text-indigo-600 mr-2 mt-0.5" />
@@ -148,7 +202,7 @@ export function RechargeBalanceModal({ isOpen, onClose, user }: RechargeBalanceM
                         </div>
                         <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Recarga Exitosa!</h3>
                         <p className="text-gray-500 max-w-[280px]">
-                            Se han acreditado S/ {amount} a la cuenta de {user.username}.
+                            Se han acreditado S/ {amount} a la cuenta de {user.username} mediante {paymentMethod}.
                         </p>
                     </div>
                 )}

@@ -13,6 +13,7 @@ import {
     CheckCircle,
     FileText,
     Users as UsersIcon,
+    DollarSign,
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -24,6 +25,7 @@ const baseNavigation = [
     { name: 'Mapa', href: '/dashboard/map', icon: MapPin },
     { name: 'Users', href: '/dashboard/users', icon: UsersIcon },
     { name: 'Sessions', href: '/dashboard/sessions', icon: Activity },
+    { name: 'Caja', href: '/dashboard/finance', icon: DollarSign },
 ];
 
 const superAdminNavigation = [

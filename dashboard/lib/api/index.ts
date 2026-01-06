@@ -149,12 +149,12 @@ export const pcsApi = {
 };
 
 export const sessionsApi = {
-    start: async (sessionData: { pcId: string; pricingType: string; bundleId?: string; minutes?: number; userId?: string }) => {
+    start: async (sessionData: { pcId: string; pricingType: string; bundleId?: string; minutes?: number; userId?: string; paymentMethod?: string }) => {
         const { data } = await api.post('/sessions/start', sessionData);
         return data;
     },
 
-    extend: async (id: string, sessionData: { pricingType: string; bundleId?: string; minutes?: number }) => {
+    extend: async (id: string, sessionData: { pricingType: string; bundleId?: string; minutes?: number; paymentMethod?: string }) => {
         const { data } = await api.post(`/sessions/${id}/extend`, sessionData);
         return data;
     },
@@ -258,8 +258,15 @@ export const usersApi = {
         return data;
     },
 
-    recharge: async (id: string, amount: number) => {
-        const { data } = await api.post(`/users/${id}/recharge`, { amount });
+    recharge: async (id: string, amount: number, lanId: string, paymentMethod: string) => {
+        const { data } = await api.post(`/users/${id}/recharge`, { amount, lanId, paymentMethod });
+        return data;
+    },
+};
+
+export const financeApi = {
+    getSummary: async (lanId: string) => {
+        const { data } = await api.get(`/finance/summary?lanId=${lanId}`);
         return data;
     },
 };

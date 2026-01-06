@@ -47,7 +47,17 @@ export class UsersController {
 
     @Post(':id/recharge')
     @HttpCode(HttpStatus.OK)
-    recharge(@Param('id') id: string, @Body() body: { amount: number }) {
-        return this.usersService.updateBalance(id, body.amount);
+    recharge(@Param('id') id: string, @Body() body: { amount: number; lanId: string; paymentMethod?: string }) {
+        // Default to 'CASH' if not provided, but ideally frontend sends it.
+        // Also validate lanId is present.
+        if (!body.lanId) {
+            // Fallback: try to use user's homeLanId or throw? 
+            // For strict cash control, we NEED the lanId where the money is entering.
+            // Let's throw check if strictness is required, or default to a "Global" if permitted?
+            // Better to require it from the Dashboard.
+            // Throwing error if missing for now to enforce frontend update.
+            if (!body.lanId) throw new Error("lanId is required for recharge");
+        }
+        return this.usersService.updateBalance(id, body.amount, body.lanId, body.paymentMethod);
     }
 }

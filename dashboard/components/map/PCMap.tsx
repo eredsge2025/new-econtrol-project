@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pcsApi } from '@/lib/api';
 import { MapPCCard } from './MapPCCard';
 import { Button } from '@/components/ui/button';
-import { Save, Edit2, X, RefreshCw, Monitor, User, RotateCcw, History, AlertTriangle } from 'lucide-react';
+import { Save, Edit2, X, RefreshCw, Monitor, User, RotateCcw, History, AlertTriangle, RefreshCcw, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { io } from 'socket.io-client';
 import {
@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Clock, Tag } from 'lucide-react';
+import { PaymentSelector, PaymentMethod } from '@/components/ui/payment-selector';
 
 interface PCMapProps {
     zones: any[];
@@ -381,11 +382,12 @@ function PCDetailsDrawer({
     const livePc = zonePcs?.find((p: any) => p.id === pc?.id) || pc;
 
     const queryClient = useQueryClient();
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
 
     const startSessionMutation = useMutation({
-        mutationFn: sessionsApi.start,
+        mutationFn: (data: any) => sessionsApi.start({ ...data, paymentMethod }),
         onSuccess: (newSession) => {
-            toast.success('Sesión iniciada correctamente');
+            toast.success(`Sesión iniciada correctamente (${paymentMethod})`);
             queryClient.invalidateQueries({ queryKey: ['pcs'] });
         },
         onError: (error: any) => {
@@ -396,9 +398,9 @@ function PCDetailsDrawer({
     });
 
     const extendSessionMutation = useMutation({
-        mutationFn: ({ id, data }: { id: string; data: any }) => sessionsApi.extend(id, data),
+        mutationFn: ({ id, data }: { id: string; data: any }) => sessionsApi.extend(id, { ...data, paymentMethod }),
         onSuccess: (updatedSession) => {
-            toast.success('Tiempo extendido correctamente');
+            toast.success(`Tiempo extendido correctamente (${paymentMethod})`);
             queryClient.invalidateQueries({ queryKey: ['pcs'] });
         },
         onError: (error: any) => {
@@ -530,6 +532,16 @@ function PCDetailsDrawer({
                             <div className="col-span-6 h-full flex flex-col">
                                 <ScrollArea className="flex-1">
                                     <div className="p-4 space-y-5">
+
+                                        {/* PAYMENT METHOD SELECTOR */}
+                                        <div className="bg-zinc-900/30 p-3 rounded-lg border border-zinc-800/50">
+                                            <PaymentSelector
+                                                value={paymentMethod}
+                                                onChange={setPaymentMethod}
+                                                showBalanceOption={!!livePc?.activeUser}
+                                            />
+                                        </div>
+
                                         {/* RATES SECTION */}
                                         <div>
                                             <div className="flex items-center gap-2 mb-3 px-1">
@@ -714,58 +726,78 @@ function PCDetailsDrawer({
                                     </div>
 
                                     {/* HISTORY */}
-                                    <div className="flex flex-col overflow-hidden">
-                                        <div className="p-4 pb-3 border-b border-zinc-900 shrink-0">
+                                    <div className="flex flex-col h-full bg-zinc-950/50 rounded-xl border border-zinc-800/50 overflow-hidden backdrop-blur-md">
+                                        {/* HEADER COMPACTO */}
+                                        <div className="px-3 py-2.5 border-b border-zinc-800/50 flex items-center justify-between bg-zinc-900/30">
                                             <div className="flex items-center gap-2">
-                                                <History className="w-4 h-4 text-zinc-600" />
-                                                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Historial</h3>
-                                                {isSessionActive && (
-                                                    <Badge variant="secondary" className="ml-auto text-[9px] h-4 bg-zinc-900">
-                                                        {activeSession.transactions?.length || 0}
-                                                    </Badge>
-                                                )}
+                                                <History className="w-3.5 h-3.5 text-zinc-500" />
+                                                <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.1em]">Movimientos Recientes</h3>
                                             </div>
+                                            {isSessionActive && (
+                                                <span className="text-[10px] font-mono text-zinc-500 bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800">
+                                                    {activeSession.transactions?.length || 0} TXs
+                                                </span>
+                                            )}
                                         </div>
 
-                                        <ScrollArea className="flex-1 px-4 h-12  max-h-96">
-                                            <div className="space-y-2 py-3">
+                                        {/* LISTA DE TRANSACCIONES */}
+                                        <ScrollArea className="flex-1 h-[320px]">
+                                            <div className="divide-y divide-zinc-900">
                                                 {isSessionActive && activeSession.transactions?.length > 0 ? (
                                                     activeSession.transactions.map((tx: any, idx: number) => {
-                                                        const isRefundOrUndo = tx.description.toLowerCase().includes('deshacer') ||
-                                                            tx.description.toLowerCase().includes('refund') ||
-                                                            tx.description.toLowerCase().includes('reembolso');
+                                                        const isRefund = tx.description.toLowerCase().match(/deshacer|refund|reembolso/);
                                                         const isPositive = Number(tx.amount) > 0;
 
                                                         return (
-                                                            <div
-                                                                key={idx}
-                                                                className="group p-2.5 rounded-lg bg-gray-500/60 border border-zinc-900 hover:border-zinc-800 hover:bg-gray-600/70 transition-all"
-                                                            >
-                                                                <div className="flex items-start justify-between gap-2 mb-1">
-                                                                    <p className={`text-xs font-medium leading-tight flex-1 ${isRefundOrUndo ? 'text-orange-400' : 'text-zinc-300'
-                                                                        }`}>
-                                                                        {tx.description.replace(/^\(.*\)\s*/, '')}
-                                                                    </p>
-                                                                    <span className={`text-xs font-bold shrink-0 tabular-nums ${isPositive
-                                                                        ? (isRefundOrUndo ? 'text-orange-500' : 'text-emerald-500')
-                                                                        : 'text-zinc-600'
-                                                                        }`}>
-                                                                        {Number(tx.amount) > 0 && '+'}{Number(tx.amount).toFixed(2)}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center gap-1 text-[10px] text-gray-900">
-                                                                    <Clock className="w-2.5 h-2.5" />
-                                                                    {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            <div key={idx} className="group px-3 py-2 hover:bg-zinc-900/40 transition-colors">
+                                                                <div className="flex items-center justify-between gap-3">
+                                                                    {/* IZQUIERDA: Icono + Info */}
+                                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                                        <div className={`shrink-0 p-1.5 rounded-md border ${isRefund ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
+                                                                                isPositive ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                                                                    'bg-zinc-800/50 border-zinc-700/50 text-zinc-500'
+                                                                            }`}>
+                                                                            {isRefund ? <RefreshCcw className="w-3 h-3" /> :
+                                                                                isPositive ? <ArrowUpRight className="w-3 h-3" /> :
+                                                                                    <ArrowDownLeft className="w-3 h-3" />}
+                                                                        </div>
+
+                                                                        <div className="flex flex-col min-w-0">
+                                                                            <p className={`text-[11px] font-semibold truncate tracking-tight leading-none mb-1 ${isRefund ? 'text-amber-200/90' : 'text-zinc-200'
+                                                                                }`}>
+                                                                                {tx.description.replace(/^\(.*\)\s*/, '')}
+                                                                            </p>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-[9px] text-zinc-500 font-medium uppercase tracking-wider">
+                                                                                    {tx.paymentMethod === 'CASH' ? 'Efectivo' :
+                                                                                        tx.paymentMethod === 'BALANCE' ? 'Saldo' : 'Tarjeta'}
+                                                                                </span>
+                                                                                <span className="w-1 h-1 rounded-full bg-zinc-800" />
+                                                                                <div className="flex items-center gap-1 text-[9px] text-zinc-600 font-mono">
+                                                                                    <Clock className="w-2.5 h-2.5" />
+                                                                                    {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* DERECHA: Monto */}
+                                                                    <div className="text-right shrink-0">
+                                                                        <span className={`text-xs font-bold tabular-nums tracking-tight ${isRefund ? 'text-amber-500' :
+                                                                                isPositive ? 'text-emerald-500' :
+                                                                                    'text-zinc-400'
+                                                                            }`}>
+                                                                            {isPositive ? '+' : ''}{Number(tx.amount).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         );
                                                     })
                                                 ) : (
-                                                    <div className="py-12 text-center opacity-30">
-                                                        <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-3 border border-zinc-800">
-                                                            <History className="w-5 h-5 text-zinc-600" />
-                                                        </div>
-                                                        <p className="text-xs text-zinc-600">Sin movimientos</p>
+                                                    <div className="flex flex-col items-center justify-center py-16 opacity-20">
+                                                        <History className="w-8 h-8 mb-2 text-zinc-500" />
+                                                        <p className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Sin movimientos</p>
                                                     </div>
                                                 )}
                                             </div>

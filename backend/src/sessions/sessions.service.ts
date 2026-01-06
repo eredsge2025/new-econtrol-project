@@ -239,28 +239,63 @@ export class SessionsService {
 
             // Payment Logic
             if (isPrePaid && cost > 0) {
+                const finalPaymentMethod = startDto.paymentMethod || 'CASH';
+
                 if (targetUserId) {
-                    // Registered User: Deduct Balance
-                    const u = await tx.user.findUnique({ where: { id: targetUserId } });
-                    const bBefore = u?.balance || 0;
+                    // Registered User: 
+                    // 1. If explicit 'external' payment (CASH, YAPE, etc), Auto-Recharge first.
+                    const isExternalPayment = finalPaymentMethod !== 'BALANCE';
+
+                    if (isExternalPayment) {
+                        // Auto-Recharge Logic
+                        const u = await tx.user.findUnique({ where: { id: targetUserId } });
+                        const bBeforeRecharge = u?.balance || 0;
+
+                        // Increment Balance
+                        await tx.user.update({
+                            where: { id: targetUserId },
+                            data: { balance: { increment: cost } }
+                        });
+
+                        // Create RECHARGE Transaction
+                        await tx.transaction.create({
+                            data: {
+                                userId: targetUserId,
+                                lanId: pc.zone.lan.id,
+                                type: 'RECHARGE',
+                                amount: cost,
+                                balanceBefore: bBeforeRecharge,
+                                balanceAfter: Number(bBeforeRecharge) + cost,
+                                description: `Recarga Automática (Inicio Sesión - ${finalPaymentMethod})`,
+                                paymentMethod: finalPaymentMethod
+                            }
+                        });
+                    }
+
+                    // 2. Deduct Bundle/Time Cost from Balance
+                    const uAfter = await tx.user.findUnique({ where: { id: targetUserId } });
+                    const bBeforeDeduct = uAfter?.balance || 0;
+
                     await tx.user.update({
                         where: { id: targetUserId },
                         data: { balance: { decrement: cost } }
                     });
+
                     await tx.transaction.create({
                         data: {
                             userId: targetUserId,
                             lanId: pc.zone.lan.id,
                             type: 'SESSION_PAYMENT',
                             amount: cost,
-                            balanceBefore: bBefore,
-                            balanceAfter: Number(bBefore) - cost,
+                            balanceBefore: bBeforeDeduct,
+                            balanceAfter: Number(bBeforeDeduct) - cost,
                             description: `Pago de sesión (${startDto.pricingType}) - ${durationMinutes} min`,
-                            sessionId: newSession.id
+                            sessionId: newSession.id,
+                            paymentMethod: 'BALANCE' // Internal Payment is always BALANCE
                         }
                     });
                 } else {
-                    // Anonymous: Record Income (Cash)
+                    // Anonymous: Record Income directly (No Balance)
                     await tx.transaction.create({
                         data: {
                             userId: null,
@@ -269,9 +304,9 @@ export class SessionsService {
                             amount: cost,
                             balanceBefore: 0,
                             balanceAfter: 0,
-                            description: `Pago Efectivo (Anónimo) - ${durationMinutes} min`,
+                            description: `Pago (${finalPaymentMethod}) (Anónimo) - ${durationMinutes} min`,
                             sessionId: newSession.id,
-                            paymentMethod: 'CASH'
+                            paymentMethod: finalPaymentMethod
                         }
                     });
                 }
@@ -380,24 +415,42 @@ export class SessionsService {
 
         // 4. Update Session and Transaction
         const updatedSession = await this.prisma.$transaction(async (tx) => {
-            // If Guest (User), Auto-Recharge (Cash Payment)
-            if (isGuest && !isAnonymous && cost > 0) {
-                await tx.user.update({
-                    where: { id: session.userId },
-                    data: { balance: { increment: cost } }
-                });
-                await tx.transaction.create({
-                    data: {
-                        userId: session.userId,
-                        lanId: session.lanId,
-                        type: 'RECHARGE',
-                        amount: cost,
-                        balanceBefore: userBalance,
-                        balanceAfter: userBalance + cost,
-                        description: 'Recarga Automática (Extensión)',
-                        paymentMethod: 'CASH' // Assumed
+            // If Guest (User) or Registered User paying explicitly: Auto-Recharge (Cash/YAPE Payment)
+            const finalPaymentMethod = extendDto.paymentMethod || 'CASH';
+            // Logic: 
+            // - If Anonymous: No balance, just Transaction(PAYMENT, Method).
+            // - If Registered: 
+            //    - If Method != BALANCE -> Transaction(RECHARGE, Method) -> User.Balance++ -> Transaction(PAYMENT, BALANCE) -> User.Balance--.
+            //    - If Method == BALANCE -> Just Deduct.
+
+            if (cost > 0) {
+                if (isAnonymous) {
+                    // Anonymous Extension
+                    // Logic handled below via transaction creation? 
+                    // Wait, current code handles isAnonymous logic mixed with isGuest.
+                    // Let's standardize.
+                } else {
+                    // Registered (or Guest User)
+                    const isExternal = finalPaymentMethod !== 'BALANCE';
+                    if (isExternal) {
+                        await tx.user.update({
+                            where: { id: session.userId },
+                            data: { balance: { increment: cost } }
+                        });
+                        await tx.transaction.create({
+                            data: {
+                                userId: session.userId,
+                                lanId: session.lanId,
+                                type: 'RECHARGE',
+                                amount: cost,
+                                balanceBefore: Number(userBalance),
+                                balanceAfter: Number(userBalance) + cost,
+                                description: `Recarga Automática (Extensión - ${finalPaymentMethod})`,
+                                paymentMethod: finalPaymentMethod
+                            }
+                        });
                     }
-                });
+                }
             }
 
             // Deduct
@@ -422,7 +475,8 @@ export class SessionsService {
                     balanceBefore: balancePreDeduction,
                     balanceAfter: balancePostDeduction,
                     description: `Extensión de tiempo (${addedMinutes} min)`,
-                    sessionId: session.id
+                    sessionId: session.id,
+                    paymentMethod: !isAnonymous ? 'BALANCE' : finalPaymentMethod
                 }
             });
 
@@ -848,7 +902,7 @@ export class SessionsService {
                     balanceBefore: session.userId ? Number(session.user.balance) : 0,
                     balanceAfter: session.userId ? Number(session.user.balance) + Number(lastTx.amount) : 0,
                     description: `Reembolso por deshacer: ${lastTx.description}`,
-                    paymentMethod: session.userId ? 'BALANCE' : 'CASH'
+                    paymentMethod: lastTx.paymentMethod || (session.userId ? 'BALANCE' : 'CASH')
                 }
             });
 

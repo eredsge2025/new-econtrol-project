@@ -8,7 +8,11 @@ import { Search, UserCircle, Loader2 } from 'lucide-react';
 import { RechargeBalanceModal } from './RechargeBalanceModal';
 import { User } from '@/types';
 
-export function UserRechargeSearch() {
+interface UserRechargeSearchProps {
+    lanId?: string;
+}
+
+export function UserRechargeSearch({ lanId }: UserRechargeSearchProps) {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -23,7 +27,7 @@ export function UserRechargeSearch() {
 
     const { data: users, isLoading } = useQuery({
         queryKey: ['users', 'search', debouncedQuery],
-        queryFn: () => usersApi.getAll(undefined, debouncedQuery),
+        queryFn: () => usersApi.getAll(lanId || undefined, debouncedQuery),
         enabled: debouncedQuery.length > 1,
     });
 
@@ -107,6 +111,7 @@ export function UserRechargeSearch() {
                     isOpen={!!selectedUser}
                     onClose={() => setSelectedUser(null)}
                     user={selectedUser}
+                    lanId={lanId || ''}
                 />
             )}
         </div>

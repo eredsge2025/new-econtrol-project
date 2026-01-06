@@ -179,33 +179,50 @@ export class UsersService {
         return new UserEntity(updated);
     }
 
-    async updateBalance(id: string, amount: number): Promise<UserEntity> {
+    async updateBalance(id: string, amount: number, lanId: string, paymentMethod: string = 'CASH'): Promise<UserEntity> {
         // Verificar que el usuario existe
-        await this.findOne(id);
+        const user = await this.findOne(id);
 
-        const updated = await this.prisma.user.update({
-            where: { id },
-            data: {
-                balance: {
-                    increment: amount,
+        const [updatedUser] = await this.prisma.$transaction([
+            // 1. Actualizar balance del usuario
+            this.prisma.user.update({
+                where: { id },
+                data: {
+                    balance: {
+                        increment: amount,
+                    },
                 },
-            },
-            select: {
-                id: true,
-                email: true,
-                username: true,
-                phone: true,
-                balance: true,
-                loyaltyPoints: true,
-                membershipTier: true,
-                role: true,
-                createdAt: true,
-                updatedAt: true,
-                lastVisit: true,
-            },
-        });
+                select: {
+                    id: true,
+                    email: true,
+                    username: true,
+                    phone: true,
+                    balance: true,
+                    loyaltyPoints: true,
+                    membershipTier: true,
+                    role: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    lastVisit: true,
+                    homeLanId: true // Ensure we select what UserEntity needs, or just map carefully
+                },
+            }),
+            // 2. Crear registro de transacción financiera
+            this.prisma.transaction.create({
+                data: {
+                    userId: id,
+                    lanId: lanId,
+                    type: 'RECHARGE',
+                    amount: amount,
+                    balanceBefore: user.balance, // Balance *before* the increment
+                    balanceAfter: Number(user.balance) + amount,
+                    paymentMethod: paymentMethod,
+                    description: `Recarga de saldo (${paymentMethod})`
+                }
+            })
+        ]);
 
-        return new UserEntity(updated);
+        return new UserEntity(updatedUser);
     }
 
     async getStats(id: string) {

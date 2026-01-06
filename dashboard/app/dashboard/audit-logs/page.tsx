@@ -24,7 +24,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { UserRole } from '@/types';
-import { FileText, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { FileText, ChevronLeft, ChevronRight, Filter, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -109,73 +109,90 @@ export default function AuditLogsPage() {
             </Card>
 
             {/* Tabla de logs */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Historial de Acciones</CardTitle>
-                    <CardDescription>
-                        Página {currentPage + 1} de {totalPages || 1}
-                    </CardDescription>
+            <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                    <div>
+                        <CardTitle className="text-lg font-semibold tracking-tight">Historial de Acciones</CardTitle>
+                        <p className="text-[13px] text-muted-foreground">
+                            Registro de auditoría del sistema
+                        </p>
+                    </div>
+                    <div className="text-xs font-medium bg-muted px-2.5 py-1 rounded-full text-muted-foreground uppercase tracking-wider">
+                        Pág. {currentPage + 1} de {totalPages || 1}
+                    </div>
                 </CardHeader>
+
                 <CardContent>
                     {isLoading ? (
-                        <div className="text-center py-12">
-                            <p className="text-muted-foreground">Cargando logs...</p>
+                        <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                            <div className="h-6 w-6 border-2 border-primary/30 border-t-primary animate-spin rounded-full" />
+                            <p className="text-xs font-medium text-muted-foreground">Sincronizando registros...</p>
                         </div>
                     ) : logs.length === 0 ? (
-                        <div className="text-center py-12">
-                            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                            <p className="text-muted-foreground">No hay logs para mostrar</p>
+                        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed rounded-xl bg-muted/30">
+                            <FileText className="h-8 w-8 text-muted-foreground/40 mb-3" />
+                            <p className="text-sm font-medium text-muted-foreground">Sin registros disponibles</p>
                         </div>
                     ) : (
-                        <>
-                            <div className="rounded-md border">
+                        <div className="space-y-4">
+                            <div className="rounded-lg border border-border/60 overflow-hidden">
                                 <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead>Acción</TableHead>
-                                            <TableHead>Admin</TableHead>
-                                            <TableHead>Usuario Afectado</TableHead>
-                                            <TableHead>Razón</TableHead>
+                                    <TableHeader className="bg-muted/50">
+                                        <TableRow className="hover:bg-transparent border-b">
+                                            <TableHead className="h-10 text-[11px] uppercase tracking-wider font-bold">Fecha</TableHead>
+                                            <TableHead className="h-10 text-[11px] uppercase tracking-wider font-bold">Estado</TableHead>
+                                            <TableHead className="h-10 text-[11px] uppercase tracking-wider font-bold">Administrador</TableHead>
+                                            <TableHead className="h-10 text-[11px] uppercase tracking-wider font-bold">Usuario Destino</TableHead>
+                                            <TableHead className="h-10 text-[11px] uppercase tracking-wider font-bold">Motivo</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {logs.map((log: any) => (
-                                            <TableRow key={log.id}>
-                                                <TableCell className="font-medium">
-                                                    {format(new Date(log.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
+                                            <TableRow key={log.id} className="group transition-colors hover:bg-muted/30 border-b border-border/40">
+                                                {/* Fecha con fuente tabular */}
+                                                <TableCell className="py-3 text-[13px] font-medium tabular-nums text-foreground/80">
+                                                    {format(new Date(log.createdAt), "dd MMM, HH:mm", { locale: es })}
                                                 </TableCell>
-                                                <TableCell>
+
+                                                {/* Badge Estilo Premium */}
+                                                <TableCell className="py-3">
                                                     {log.action === 'APPROVED' ? (
-                                                        <Badge className="bg-green-600 hover:bg-green-700">
-                                                            Aprobado
-                                                        </Badge>
+                                                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                            <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                                                            APROBADO
+                                                        </div>
                                                     ) : (
-                                                        <Badge variant="destructive">
-                                                            Rechazado
-                                                        </Badge>
+                                                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                                            <span className="h-1 w-1 rounded-full bg-rose-500" />
+                                                            RECHAZADO
+                                                        </div>
                                                     )}
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{log.admin.username}</div>
-                                                        <div className="text-sm text-muted-foreground">{log.admin.email}</div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{log.targetUser.username}</div>
-                                                        <div className="text-sm text-muted-foreground">{log.targetUser.email}</div>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="max-w-md">
-                                                    {log.reason ? (
-                                                        <span className="text-sm italic text-muted-foreground">
-                                                            "{log.reason}"
+
+                                                {/* Admin Info */}
+                                                <TableCell className="py-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[13px] font-semibold flex items-center gap-1">
+                                                            <ShieldCheck className="h-3 w-3 text-blue-500" />
+                                                            {log.admin.username}
                                                         </span>
-                                                    ) : (
-                                                        <span className="text-sm text-muted-foreground">-</span>
-                                                    )}
+                                                        <span className="text-[11px] text-muted-foreground leading-tight">{log.admin.email}</span>
+                                                    </div>
+                                                </TableCell>
+
+                                                {/* Target User Info */}
+                                                <TableCell className="py-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[13px] font-medium text-foreground/90">{log.targetUser.username}</span>
+                                                        <span className="text-[11px] text-muted-foreground leading-tight">{log.targetUser.email}</span>
+                                                    </div>
+                                                </TableCell>
+
+                                                {/* Reason con estilo discreto */}
+                                                <TableCell className="py-3 max-w-[200px]">
+                                                    <p className="text-[12px] text-muted-foreground truncate group-hover:text-foreground transition-colors">
+                                                        {log.reason || <span className="opacity-30">—</span>}
+                                                    </p>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -183,35 +200,35 @@ export default function AuditLogsPage() {
                                 </Table>
                             </div>
 
-                            {/* Paginación */}
-                            {totalPages > 1 && (
-                                <div className="flex items-center justify-between mt-4">
-                                    <div className="text-sm text-muted-foreground">
-                                        Mostrando {currentPage * pageSize + 1} - {Math.min((currentPage + 1) * pageSize, total)} de {total}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                                            disabled={currentPage === 0}
-                                        >
-                                            <ChevronLeft className="h-4 w-4" />
-                                            Anterior
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-                                            disabled={currentPage >= totalPages - 1}
-                                        >
-                                            Siguiente
-                                            <ChevronRight className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                            {/* Footer de Paginación Compacto */}
+                            <div className="flex items-center justify-between pt-2">
+                                <p className="text-[12px] font-medium text-muted-foreground">
+                                    Mostrando <span className="text-foreground">{currentPage * pageSize + 1}-{Math.min((currentPage + 1) * pageSize, total)}</span> de <span className="text-foreground">{total}</span>
+                                </p>
+                                <div className="flex gap-1.5">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-3 text-[12px] font-semibold gap-1 hover:bg-muted"
+                                        onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                                        disabled={currentPage === 0}
+                                    >
+                                        <ChevronLeft className="h-3.5 w-3.5" />
+                                        Anterior
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-3 text-[12px] font-semibold gap-1 hover:bg-muted"
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                                        disabled={currentPage >= totalPages - 1}
+                                    >
+                                        Siguiente
+                                        <ChevronRight className="h-3.5 w-3.5" />
+                                    </Button>
                                 </div>
-                            )}
-                        </>
+                            </div>
+                        </div>
                     )}
                 </CardContent>
             </Card>

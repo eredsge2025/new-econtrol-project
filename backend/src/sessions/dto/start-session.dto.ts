@@ -25,4 +25,7 @@ export class StartSessionDto {
 
     @IsOptional()
     minutes?: number;
+
+    @IsOptional()
+    paymentMethod?: string;
 }

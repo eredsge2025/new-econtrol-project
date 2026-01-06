@@ -14,9 +14,10 @@ import {
 
 interface UserCardProps {
     user: any;
+    lanId: string;
 }
 
-export function UserCard({ user }: UserCardProps) {
+export function UserCard({ user, lanId }: UserCardProps) {
     const [isRechargeOpen, setIsRechargeOpen] = useState(false);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -130,6 +131,7 @@ export function UserCard({ user }: UserCardProps) {
                 isOpen={isRechargeOpen}
                 onClose={() => setIsRechargeOpen(false)}
                 user={user}
+                lanId={lanId}
             />
 
             <UserDetailsModal
