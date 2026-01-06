@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("eControl.Agent.Shared")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6619052e6e396b57e98a9c65f25e1efeb311b18b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+94dd0176b0e7694c0e50993fb4e23b5fc977f2dd")]
 [assembly: System.Reflection.AssemblyProductAttribute("eControl.Agent.Shared")]
 [assembly: System.Reflection.AssemblyTitleAttribute("eControl.Agent.Shared")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

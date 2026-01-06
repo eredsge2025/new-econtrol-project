@@ -100,24 +100,24 @@ namespace eControl.Agent.UI.ViewModels
                                  // Update UI on Main Thread
                                  Avalonia.Threading.Dispatcher.UIThread.Post(() => 
                                  {
-                                     if (status.IsActive)
+                                     if (status.IsActive && !IsLoading)
                                      {
                                          // Session Active!
                                          if (!IsSessionActive)
                                          {
                                               // Transition to Active
                                               IsSessionActive = true;
-                                              IsLoggedIn = true;
-                                              HideDashboard();
+                                              IsLoggedIn = true; ShowLoginForm = false; HideDashboard();
                                               IsPillVisible = true;
                                               
-                                              // Set Mini Mode
+                                              // Set Mini Mode (Normal + CodeBehind Position)
                                               Background = "Transparent";
-                                              WindowState = "Normal";
+                                              WindowState = "Normal"; 
                                               WindowWidth = 450;
                                               WindowHeight = 100;
                                               VerticalAlignment = "Top";
-                                              HorizontalAlignment = "Center";
+                                              HorizontalAlignment = "Stretch";
+                                              ShowLoginForm = false;
                                          }
                                          
                                          // Update Timer
@@ -156,20 +156,20 @@ namespace eControl.Agent.UI.ViewModels
                                              IsPillVisible = false;
                                              
                                              // Return to Dashboard (Authenticated) or Login (Guest)
-                                             if (IsLoggedIn)
-                                             {
-                                                 ShowDashboard();
-                                                 Background = "#1A1A1A";
-                                                 WindowState = "FullScreen";
-                                                 WindowWidth = double.NaN;
-                                                 WindowHeight = double.NaN;
-                                                 VerticalAlignment = "Stretch";
-                                                 HorizontalAlignment = "Stretch";
-                                             }
-                                             else 
-                                             {
-                                                 ResetState();
-                                             }
+                                             if (IsLoggedIn && !IsLoading) 
+                                              {
+                                                  ShowDashboard();
+                                                  Background = "#1A1A1A";
+                                                  WindowState = "FullScreen";
+                                                  WindowWidth = double.NaN;
+                                                  WindowHeight = double.NaN;
+                                                  VerticalAlignment = "Stretch";
+                                                  HorizontalAlignment = "Stretch";
+                                              }
+                                              else 
+                                              {
+                                                  ResetState();
+                                              }
                                          }
                                      }
                                  });

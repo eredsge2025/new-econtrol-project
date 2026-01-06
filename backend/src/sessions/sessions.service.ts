@@ -4,16 +4,19 @@ import {
     ForbiddenException,
     BadRequestException,
     ConflictException,
+    Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PcsGateway } from '../pcs/pcs.gateway';
 import { StartSessionDto, PricingType } from './dto/start-session.dto';
 import { EndSessionDto } from './dto/end-session.dto';
 import { SessionEntity } from './entities/session.entity';
-import { UserRole, PCStatus } from '@prisma/client';
+import { UserRole, PCStatus, SessionStatus } from '@prisma/client';
 
 @Injectable()
 export class SessionsService {
+    private readonly logger = new Logger(SessionsService.name);
+
     constructor(
         private prisma: PrismaService,
         private pcsGateway: PcsGateway,
@@ -103,7 +106,36 @@ export class SessionsService {
             isGuestSession = true;
         }
 
-        // 2. Verificar que usuario existe y no tenga sesión activa
+        // 2. Verificar si ya existe una sesión (activa o expirada) para este usuario en esta PC
+        // Si existe, la extendemos en lugar de crear una nueva.
+        const existingSession = await this.prisma.session.findFirst({
+            where: {
+                pcId: pc.id,
+                userId: targetUserId, // Must match target user
+                status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED, SessionStatus.EXPIRED] }
+            },
+            orderBy: { startedAt: 'desc' }
+        });
+
+        if (existingSession) {
+            this.logger.log(`🔄 Extending existing session ${existingSession.id} for user ${targetUserId} on PC ${pc.id}`);
+            // Delegate to Extend Logic
+            // We need to adapt the return type since extend returns {success: boolean} usually?
+            // Wait, extend returns void/success object in current impl. We need SessionEntity.
+            // Let's refactor extend to return the updated session or just do it manually here if extend is too different.
+            // Actually, extend is compatible logic-wise (add time, add tx).
+
+            await this.extend(existingSession.id, userId, startDto); // Reuse logic
+
+            // Fetch and return the updated session
+            const updated = await this.prisma.session.findUnique({
+                where: { id: existingSession.id },
+                include: { pc: { include: { zone: { include: { lan: true } } } }, user: true }
+            });
+            return new SessionEntity(updated);
+        }
+
+        // 2b. Validar conflicto normal (si es otro usuario o si no hay sesión compatible)
         let user: any = null;
         if (targetUserId) {
             user = await this.prisma.user.findUnique({
@@ -120,22 +152,20 @@ export class SessionsService {
                 throw new NotFoundException('Usuario no encontrado');
             }
 
-            if (user.sessions.length > 0) {
-                throw new ConflictException('El usuario ya tiene una sesión activa');
+            // Si tiene sesión activa en OTRA PC (pc.id != activePcId), error.
+            if (user.sessions.length > 0 && user.sessions[0].pcId !== pc.id) {
+                throw new ConflictException(`El usuario ya tiene una sesión activa en PC ${user.sessions[0].pcId}`);
             }
         }
 
         // Double check PC status
-        // PERMITIR si está OFFLINE/MALICIOUS (cola de espera)
+        // PERMITIR si está OFFLINE/MALICIOUS (cola de espera) O si está OCUPADA por el MISMO usuario (cubierto arriba por extension logic)
         if (pc.status !== PCStatus.AVAILABLE &&
             pc.status !== PCStatus.OFFLINE &&
             pc.status !== PCStatus.MALICIOUS &&
             (!pc.activeUser || pc.activeUser.id !== targetUserId)) {
 
-            if (isGuestSession) {
-                // Rollback user? (Not critical)
-            }
-            throw new BadRequestException('El PC no está disponible');
+            throw new BadRequestException('El PC no está disponible (Ocupado por otro usuario)');
         }
 
         // 3. Validar según tipo de pricing
