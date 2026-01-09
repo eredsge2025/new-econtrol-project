@@ -72,7 +72,8 @@ namespace eControl.Agent.Master.Services
                     var pcData = Newtonsoft.Json.Linq.JObject.Parse(jsonString);
 
                     // var pcData = response.GetValue<Newtonsoft.Json.Linq.JObject>(); 
-                    string activeUser = pcData["activeUser"]?.Type != Newtonsoft.Json.Linq.JTokenType.Null ? (string)pcData["activeUser"]["username"] : "None";
+                    var userToken = pcData["activeUser"];
+                    string activeUser = (userToken != null && userToken.Type != Newtonsoft.Json.Linq.JTokenType.Null) ? (string)userToken["username"] : "None";
                     _logger.LogInformation("📩 Received pc_status_update for PC: {PcId} (User: {User})", (string)pcData["id"], activeUser);
                      LogToFile($"📩 Received pc_status_update for PC: {(string)pcData["id"]} (User: {activeUser})");
                     

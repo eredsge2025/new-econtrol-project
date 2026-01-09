@@ -74,7 +74,7 @@ export class AgentsController {
         // Agent authenticates user locally, but for strict security, Agent should send User Token?
         // OR Agent trusts itself and sends userId. Since Agent is trusted via ApiKey, we can trust userId.
 
-        const { userId, type, itemId } = body;
+        const { userId, type, itemId, paymentMethod } = body;
 
         // TODO: Validate User belongs to LAN (security check)
 
@@ -96,7 +96,8 @@ export class AgentsController {
                 pcId,
                 pricingType: type === 'RATE' ? PricingType.FIXED : PricingType.BUNDLE,
                 minutes: type === 'RATE' ? (await this.prisma.rateSchedule.findUnique({ where: { id: itemId } }))?.minutes : undefined,
-                bundleId: type === 'BUNDLE' ? itemId : undefined
+                bundleId: type === 'BUNDLE' ? itemId : undefined,
+                paymentMethod // Pass payment method
             } as any);
         } else {
             // Start case
@@ -107,13 +108,15 @@ export class AgentsController {
                 session = await this.sessionsService.start(userId, {
                     pcId,
                     pricingType: PricingType.FIXED,
-                    minutes: rate.minutes
+                    minutes: rate.minutes,
+                    paymentMethod // Pass payment method
                 } as any);
             } else {
                 session = await this.sessionsService.start(userId, {
                     pcId,
                     pricingType: PricingType.BUNDLE,
-                    bundleId: itemId
+                    bundleId: itemId,
+                    paymentMethod // Pass payment method
                 } as any);
             }
         }

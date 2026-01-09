@@ -253,8 +253,28 @@ namespace eControl.Agent.Master
                              return JsonConvert.SerializeObject(new PurchaseResponse { Success = false, Message = "Usuario no identificado" });
                          }
 
-                         var response = await _apiService.PurchaseAsync(_pcInfo.PcId, activeUser, purchaseData!);
+                     var response = await _apiService.PurchaseAsync(_pcInfo.PcId, activeUser, purchaseData!);
                          LogToFile($"Pipe: PurchaseRequest Result: {response.Success}. NewBalance: {response.NewBalance}");
+                         
+                         if (response.Success)
+                         {
+                             // FIX: Update local cache immediately so UI polling sees the new balance
+                             try 
+                             {
+                                 dynamic pcData = JsonConvert.DeserializeObject(_currentSessionData)!;
+                                 if (pcData.activeUser != null)
+                                 {
+                                     pcData.activeUser.balance = response.NewBalance;
+                                     _currentSessionData = JsonConvert.SerializeObject(pcData);
+                                     LogToFile($"Pipe: PurchaseRequest - Updated local session data with new balance: {response.NewBalance}");
+                                 }
+                             }
+                             catch (Exception ex)
+                             {
+                                 LogToFile($"Pipe: PurchaseRequest - Failed to update local cache: {ex.Message}");
+                             }
+                         }
+
                          return JsonConvert.SerializeObject(response);
                      }
                      LogToFile("Pipe: PurchaseRequest - FAILED: Master not ready (_pcInfo/ApiService null)");

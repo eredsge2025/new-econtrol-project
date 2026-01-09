@@ -29,8 +29,8 @@ export class SessionsController {
     }
 
     @Post(':id/extend')
-    async extend(@Param('id') id: string, @Body() data: StartSessionDto) {
-        return this.sessionsService.extend(id, data.userId, data);
+    async extend(@Param('id') id: string, @Request() req, @Body() data: StartSessionDto) {
+        return this.sessionsService.extend(id, data.userId, data, req.user.id, req.user.role);
     }
 
     @Post(':id/undo')

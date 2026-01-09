@@ -191,6 +191,35 @@ namespace eControl.Agent.UI.ViewModels
             ShowLoginForm = true;
             _idleTimer.Stop();
             _idleTimer.Start();
+
+            // If session is active, we need to expand the window to show the modal
+            if (IsSessionActive)
+            {
+                Background = "#aa000000"; // Semi-transparent overlay
+                WindowState = "FullScreen";
+                VerticalAlignment = "Stretch";
+                HorizontalAlignment = "Stretch";
+                WindowHeight = double.NaN;
+                WindowWidth = double.NaN;
+            }
+        }
+
+        [RelayCommand]
+        public void CancelLogin()
+        {
+            ShowLoginForm = false;
+            _idleTimer.Stop();
+
+            // If session is active, revert to pill mode
+            if (IsSessionActive)
+            {
+                Background = "Transparent";
+                WindowState = "Normal";
+                WindowWidth = 450;
+                WindowHeight = 100;
+                VerticalAlignment = "Top";
+                HorizontalAlignment = "Stretch"; // Or Center, matching StartSessionAsync logic
+            }
         }
 
         public void ResetIdleTimer()
@@ -412,6 +441,11 @@ namespace eControl.Agent.UI.ViewModels
                     HideDashboard();
                 else
                     ShowDashboard();
+            }
+            else
+            {
+                // Not logged in (Anonymous Session) -> Show Login Form
+                ShowLogin();
             }
         }
 

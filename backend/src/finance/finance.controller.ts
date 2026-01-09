@@ -12,4 +12,27 @@ export class FinanceController {
         if (!lanId) throw new BadRequestException('lanId is required');
         return this.financeService.getDailySummary(lanId);
     }
+
+    @Get('transactions')
+    async getTransactions(
+        @Query('lanId') lanId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+        @Query('type') type?: string,
+        @Query('paymentMethod') paymentMethod?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string,
+        @Query('search') search?: string,
+    ) {
+        if (!lanId) throw new BadRequestException('lanId is required');
+        return this.financeService.getTransactions(lanId, {
+            page,
+            limit,
+            type,
+            paymentMethod,
+            startDate,
+            endDate,
+            search
+        });
+    }
 }

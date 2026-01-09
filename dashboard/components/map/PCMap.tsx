@@ -34,7 +34,7 @@ export function PCMap({ zones }: PCMapProps) {
     const [selectedPc, setSelectedPc] = useState<any>(null);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-    const lanId = zones?.[0]?.lanId;
+    const lanId = zones?.[0]?.lanId as string | undefined;
 
     useEffect(() => {
         if (!lanId) return;
@@ -156,6 +156,7 @@ export function PCMap({ zones }: PCMapProps) {
                 pc={selectedPc}
                 isOpen={isDrawerOpen}
                 onClose={() => setIsDrawerOpen(false)}
+                lanId={lanId}
             />
         </div>
     );
@@ -355,10 +356,12 @@ function PCDetailsDrawer({
     pc,
     isOpen,
     onClose,
+    lanId,
 }: {
     pc: any;
     isOpen: boolean;
     onClose: () => void;
+    lanId?: string;
 }) {
     const { data: rates, isLoading: isLoadingRates } = useQuery({
         queryKey: ['rates', pc?.zoneId],
@@ -467,7 +470,7 @@ function PCDetailsDrawer({
 
     return (
         <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DrawerContent className="h-[60vh] bg-gray-950 border-t border-zinc-800 flex flex-col">
+            <DrawerContent className="h-[60vh] bg-gray-950/40 backdrop-blur-sm border-t border-zinc-800 flex flex-col">
                 <DrawerHeader className="sr-only">
                     <DrawerTitle>Detalles de {livePc.name}</DrawerTitle>
                     <DrawerDescription>
@@ -539,6 +542,8 @@ function PCDetailsDrawer({
                                                 value={paymentMethod}
                                                 onChange={setPaymentMethod}
                                                 showBalanceOption={!!livePc?.activeUser}
+                                                lanId={lanId}
+                                                gridClassName="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 gap-2"
                                             />
                                         </div>
 
@@ -546,7 +551,7 @@ function PCDetailsDrawer({
                                         <div>
                                             <div className="flex items-center gap-2 mb-3 px-1">
                                                 <div className="h-3 w-1 bg-blue-500 rounded-full" />
-                                                <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Extender Tiempo Libre</h3>
+                                                <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Extender Tiempo </h3>
                                                 <Badge variant="outline" className="ml-auto text-[9px] h-5">Extensión</Badge>
                                             </div>
                                             <div className="grid grid-cols-10 gap-2">
@@ -595,10 +600,10 @@ function PCDetailsDrawer({
                                                 <div className="h-3 w-1 bg-purple-500 rounded-full" />
                                                 <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Paquetes y Promociones</h3>
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="grid grid-cols-8 gap-2">
                                                 {isLoadingBundles ? (
-                                                    [1, 2, 3].map(i => (
-                                                        <div key={i} className="h-16 bg-zinc-900/50 rounded-lg animate-pulse" />
+                                                    [1, 2, 3, 4, 5, 6].map(i => (
+                                                        <div key={i} className="h-24 bg-zinc-900/50 rounded-lg animate-pulse" />
                                                     ))
                                                 ) : bundles?.length > 0 ? (
                                                     bundles.map((bundle: any) => (
@@ -606,49 +611,44 @@ function PCDetailsDrawer({
                                                             key={bundle.id}
                                                             onClick={() => handleStartSession('BUNDLE', bundle)}
                                                             className="
-                                                                group relative overflow-hidden text-left w-full
-                                                                p-3 rounded-lg
-                                                                bg-zinc-900/40 border border-zinc-800/60
+                                                                group relative overflow-hidden h-24
+                                                                flex flex-col items-center justify-between p-2
+                                                                bg-slate-500/50 border border-zinc-800/60
                                                                 hover:bg-zinc-900 hover:border-purple-500/50
-                                                                transition-all duration-200
-                                                                flex items-center justify-between
-                                                                hover:shadow-[0_0_15px_-10px_rgba(168,85,247,0.3)]
+                                                                rounded-lg transition-all duration-200
+                                                                hover:shadow-[0_0_15px_-10px_rgba(168,85,247,0.3)] cursor-pointer
                                                                 active:scale-[0.98]
                                                             "
                                                         >
-                                                            {/* Decorator */}
-                                                            <div className="absolute top-1 right-1 opacity-5 group-hover:opacity-10 transition-opacity">
-                                                                <Tag className="w-5 h-5 text-purple-500 -rotate-12" />
+                                                            {bundle.isSaveable && (
+                                                                <div className="absolute top-0 left-0 bg-purple-500/20 text-purple-300 text-[8px] px-1.5 py-0.5 rounded-br font-bold backdrop-blur-sm">
+                                                                    SAVE
+                                                                </div>
+                                                            )}
+
+                                                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Tag className="w-3 h-3 text-purple-500 -rotate-12" />
                                                             </div>
 
-                                                            <div className="relative z-10 flex-1 min-w-0 pr-3">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <h4 className="font-bold text-zinc-200 text-xs leading-tight group-hover:text-purple-400 transition-colors truncate">
-                                                                        {bundle.name}
-                                                                    </h4>
-                                                                    {bundle.isSaveable && (
-                                                                        <Badge variant="outline" className="text-[8px] font-bold bg-purple-500/10 text-purple-300 px-1.5 py-0 h-4 border-purple-500/20">
-                                                                            SAVE
-                                                                        </Badge>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex items-center gap-1.5 text-zinc-500 text-[10px]">
-                                                                    <Clock className="w-3 h-3" />
-                                                                    <span>{bundle.minutes} min</span>
-                                                                    <span className="text-zinc-700">•</span>
-                                                                    <span className="text-zinc-600">Regular</span>
+                                                            <div className="mt-2 text-center w-full px-1">
+                                                                <h4 className="font-bold text-zinc-200 text-[10px] leading-tight group-hover:text-purple-400 transition-colors truncate">
+                                                                    {bundle.name}
+                                                                </h4>
+                                                                <div className="flex items-center justify-center gap-1 text-zinc-500 text-[9px] mt-0.5">
+                                                                    <Clock className="w-2.5 h-2.5" />
+                                                                    <span>{bundle.minutes}m</span>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="relative z-10 text-right">
-                                                                <div className="font-bold text-sm text-emerald-400 group-hover:text-emerald-300">
+                                                            <div className="w-full text-center bg-zinc-950/30 rounded py-0.5 mt-1 border border-transparent group-hover:border-purple-500/10">
+                                                                <div className="font-bold text-xs text-emerald-400 group-hover:text-emerald-300">
                                                                     S/ {Number(bundle.price).toFixed(2)}
                                                                 </div>
                                                             </div>
                                                         </button>
                                                     ))
                                                 ) : (
-                                                    <div className="py-8 text-center text-zinc-600 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20">
+                                                    <div className="col-span-6 py-8 text-center text-zinc-600 border border-dashed border-zinc-800 rounded-xl bg-zinc-900/20">
                                                         <Tag className="w-5 h-5 mx-auto mb-2 opacity-50" />
                                                         <span className="text-[10px] uppercase tracking-wider">Sin paquetes</span>
                                                     </div>
@@ -754,8 +754,8 @@ function PCDetailsDrawer({
                                                                     {/* IZQUIERDA: Icono + Info */}
                                                                     <div className="flex items-center gap-2.5 min-w-0">
                                                                         <div className={`shrink-0 p-1.5 rounded-md border ${isRefund ? 'bg-amber-500/10 border-amber-500/20 text-amber-500' :
-                                                                                isPositive ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
-                                                                                    'bg-zinc-800/50 border-zinc-700/50 text-zinc-500'
+                                                                            isPositive ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                                                                'bg-zinc-800/50 border-zinc-700/50 text-zinc-500'
                                                                             }`}>
                                                                             {isRefund ? <RefreshCcw className="w-3 h-3" /> :
                                                                                 isPositive ? <ArrowUpRight className="w-3 h-3" /> :
@@ -784,8 +784,8 @@ function PCDetailsDrawer({
                                                                     {/* DERECHA: Monto */}
                                                                     <div className="text-right shrink-0">
                                                                         <span className={`text-xs font-bold tabular-nums tracking-tight ${isRefund ? 'text-amber-500' :
-                                                                                isPositive ? 'text-emerald-500' :
-                                                                                    'text-zinc-400'
+                                                                            isPositive ? 'text-emerald-500' :
+                                                                                'text-zinc-400'
                                                                             }`}>
                                                                             {isPositive ? '+' : ''}{Number(tx.amount).toLocaleString('es-ES', { minimumFractionDigits: 2 })}
                                                                         </span>

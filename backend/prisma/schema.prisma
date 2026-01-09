@@ -58,6 +58,7 @@ model User {
   reservations      Reservation[]
   orders            Order[]
   transactions      Transaction[]
+  processedTransactions Transaction[] @relation("TransactionStaff")
   rewards           LoyaltyReward[]
   adminActions      ApprovalLog[]   @relation("AdminActions")
   targetUserActions ApprovalLog[]   @relation("TargetUserActions")
@@ -118,8 +119,31 @@ model LANCenter {
   orders       Order[]
   reservations Reservation[]
   subscription Subscription?
+  
+  // Payment Methods
+  paymentMethods LanPaymentMethod[]
 
   @@map("lan_centers")
+}
+
+model LanPaymentMethod {
+  id          String    @id @default(uuid())
+  lanId       String    @map("lan_id")
+  lan         LANCenter @relation(fields: [lanId], references: [id], onDelete: Cascade)
+  
+  methodId    String    @map("method_id") // 'CASH', 'YAPE', 'PLIN', 'CARD'
+  displayName String?   @map("display_name")
+  isEnabled   Boolean   @default(true) @map("is_enabled")
+  icon        String?   @default("Banknote") // Icon name from Lucide
+  color       String?   @default("text-emerald-500") // Tailwind class
+  
+  metadata    Json?     // For QR codes, phone numbers, etc.
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@unique([lanId, methodId])
+  @@map("lan_payment_methods")
 }
 
 enum LANStatus {
@@ -441,9 +465,13 @@ model Transaction {
   sessionId String?  @map("session_id")
   session   Session? @relation(fields: [sessionId], references: [id])
 
+  staffId String? @map("staff_id")
+  staff   User?   @relation("TransactionStaff", fields: [staffId], references: [id])
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
+  @@index([staffId])
   @@map("transactions")
 }
 

@@ -99,6 +99,25 @@ export const lansApi = {
         await api.delete(`/lans/${id}`);
     },
 
+    getPaymentMethods: async (id: string) => {
+        const { data } = await api.get(`/lans/${id}/payment-methods`);
+        return data;
+    },
+
+    updatePaymentMethods: async (id: string, methods: any[]) => {
+        const { data } = await api.patch(`/lans/${id}/payment-methods`, methods);
+        return data;
+    },
+
+    createPaymentMethod: async (id: string, data: any) => {
+        const response = await api.post(`/lans/${id}/payment-methods`, data);
+        return response.data;
+    },
+
+    deletePaymentMethod: async (id: string, methodId: string) => {
+        await api.delete(`/lans/${id}/payment-methods/${methodId}`);
+    },
+
     getStats: async (id: string) => {
         const { data } = await api.get(`/lans/${id}/stats`);
         return data;
@@ -267,6 +286,21 @@ export const usersApi = {
 export const financeApi = {
     getSummary: async (lanId: string) => {
         const { data } = await api.get(`/finance/summary?lanId=${lanId}`);
+        return data;
+    },
+
+    getTransactions: async (lanId: string, params?: {
+        page?: number;
+        limit?: number;
+        type?: string;
+        paymentMethod?: string;
+        startDate?: string;
+        endDate?: string;
+        search?: string;
+    }) => {
+        const { data } = await api.get('/finance/transactions', {
+            params: { lanId, ...params }
+        });
         return data;
     },
 };

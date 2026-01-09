@@ -164,6 +164,7 @@ export function RechargeBalanceModal({ isOpen, onClose, user, lanId }: RechargeB
                                     value={paymentMethod}
                                     onChange={setPaymentMethod}
                                     className="pt-2"
+                                    lanId={selectedLanId}
                                 />
 
                                 <div className="p-3 bg-indigo-50 rounded-lg flex items-start border border-indigo-100">

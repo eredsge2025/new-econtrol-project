@@ -71,4 +71,110 @@ export class FinanceService {
 
         return summary;
     }
+    async getTransactions(lanId: string, params: {
+        page?: number;
+        limit?: number;
+        type?: string;
+        paymentMethod?: string;
+        startDate?: string;
+        endDate?: string;
+        search?: string;
+    }) {
+        const page = params.page ? Number(params.page) : 1;
+        const limit = params.limit ? Number(params.limit) : 20;
+        const skip = (page - 1) * limit;
+
+        const where: any = {
+            lanId,
+        };
+
+        if (params.type && params.type !== 'ALL') {
+            where.type = params.type;
+        }
+
+        if (params.paymentMethod && params.paymentMethod !== 'ALL') {
+            where.paymentMethod = params.paymentMethod;
+        }
+
+        if (params.startDate || params.endDate) {
+            where.createdAt = {};
+            if (params.startDate) where.createdAt.gte = new Date(params.startDate);
+            if (params.endDate) {
+                const end = new Date(params.endDate);
+                end.setHours(23, 59, 59, 999);
+                where.createdAt.lte = end;
+            }
+        }
+
+        if (params.search) {
+            where.OR = [
+                {
+                    user: {
+                        OR: [
+                            { username: { contains: params.search, mode: 'insensitive' } },
+                            { email: { contains: params.search, mode: 'insensitive' } }
+                        ]
+                    }
+                },
+                {
+                    session: {
+                        pc: {
+                            name: { contains: params.search, mode: 'insensitive' }
+                        }
+                    }
+                }
+            ];
+        }
+
+
+        const [data, total] = await Promise.all([
+            this.prisma.transaction.findMany({
+                where,
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            username: true,
+                            email: true
+                        }
+                    },
+                    staff: {
+                        select: {
+                            username: true,
+                            email: true
+                        }
+                    },
+                    session: {
+                        select: {
+                            id: true,
+                            durationSeconds: true,
+                            startedAt: true,
+                            endedAt: true,
+                            pc: {
+                                select: {
+                                    name: true
+                                }
+                            }
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: limit,
+                skip
+            }),
+            this.prisma.transaction.count({ where })
+        ]);
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                limit,
+                lastPage: Math.ceil(total / limit)
+            }
+        };
+    }
 }

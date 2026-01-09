@@ -3,10 +3,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { PcsService } from '../pcs/pcs.service';
+import { PcsGateway } from '../pcs/pcs.gateway';
+import { SessionStatus } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private pcsService: PcsService,
+        private pcsGateway: PcsGateway,
+    ) { }
 
     async findAll(lanId?: string, q?: string): Promise<UserEntity[]> {
         const whereClause: any = {};
@@ -179,7 +186,7 @@ export class UsersService {
         return new UserEntity(updated);
     }
 
-    async updateBalance(id: string, amount: number, lanId: string, paymentMethod: string = 'CASH'): Promise<UserEntity> {
+    async updateBalance(id: string, amount: number, lanId: string, paymentMethod: string = 'CASH', staffId?: string): Promise<UserEntity> {
         // Verificar que el usuario existe
         const user = await this.findOne(id);
 
@@ -217,10 +224,34 @@ export class UsersService {
                     balanceBefore: user.balance, // Balance *before* the increment
                     balanceAfter: Number(user.balance) + amount,
                     paymentMethod: paymentMethod,
-                    description: `Recarga de saldo (${paymentMethod})`
+                    description: `Recarga de saldo (${paymentMethod})`,
+                    staffId: staffId || null,
                 }
             })
         ]);
+
+
+
+        // 3. Notificar si el usuario tiene una sesión activa para actualizar el dashboard
+        const activeSession = await this.prisma.session.findFirst({
+            where: {
+                userId: id,
+                status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED] }
+            },
+            select: { pcId: true }
+        });
+
+        if (activeSession) {
+            try {
+                // Obtenemos el estado completo actualizado de la PC (incluye el activeUser con nuevo saldo)
+                const updatedPc = await this.pcsService.findOne(activeSession.pcId);
+                // Emitimos el evento socket a la sala del LAN
+                // @ts-ignore
+                this.pcsGateway.emitStatusUpdate(updatedPc, updatedPc.zone.lanId);
+            } catch (error) {
+                console.error(`Error notifying PC update for user ${id}:`, error);
+            }
+        }
 
         return new UserEntity(updatedUser);
     }

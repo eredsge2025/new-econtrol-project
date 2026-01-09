@@ -244,13 +244,13 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
             {/* Body: Icon or Timer */}
             <div className="flex-1 flex flex-col items-center justify-center p-1 relative">
                 {activeSession ? (
-                    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
+                    <div className="flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
                         {activeSession.status === 'EXPIRED' ? (
                             <>
-                                <span className="text-sm font-bold text-red-500 uppercase tracking-wider mb-0.5">
+                                <span className="text-xs font-bold text-red-500 uppercase tracking-wider mb-0.5">
                                     Finalizado
                                 </span>
-                                <span className="text-xl font-black text-red-600 dark:text-red-500 tracking-tight">
+                                <span className="text-xs font-black text-red-600 dark:text-red-500 tracking-tight">
                                     S/ {Number(activeSession.totalCost || 0).toFixed(2)}
                                 </span>
                             </>
@@ -259,21 +259,46 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
                                 <span className="text-lg font-mono font-bold tracking-tighter leading-none">
                                     {timeLeft || "00:00"}
                                 </span>
-                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
                                     S/{Number(activeSession.totalCost || 0).toFixed(2)}
                                 </span>
                             </>
                         )}
 
-                        <div className="flex items-center gap-1 mt-1 opacity-75">
-                            <Clock className="w-3 h-3" />
-                            <span className={cn(
-                                "text-[10px] font-medium uppercase",
-                                activeSession.status === 'EXPIRED' ? "text-red-500" : ""
-                            )}>
-                                {activeSession.status === 'PAUSED' ? 'Pausado' : activeSession.status === 'EXPIRED' ? 'Expirado' : 'Activo'}
-                            </span>
-                        </div>
+                        {/*Muestra el estado de la sesion activa, esta comentado por ahora ya que no encaja con el diseño actual */}
+                        {/*   <div className="flex flex-col items-center justify-center">
+                            <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-cyan-400" />
+                                <span className="text-[10px] font-semibold uppercase tracking-wide">
+                                    {activeSession.status === 'PAUSED' && (
+                                        <span className="text-yellow-400">Pausado</span>
+                                    )}
+                                    {activeSession.status === 'EXPIRED' && (
+                                        <span className="text-red-500">Expirado</span>
+                                    )}
+                                    {activeSession.status === 'ACTIVE' && (
+                                        <span className="text-green-400">Activo</span>
+                                    )}
+                                </span>
+                            </div>
+
+                            {username && (
+                                <span
+                                    className={cn(
+                                        "text-[10px] font-bold tracking-wide",
+                                        activeSession.status === 'EXPIRED'
+                                            ? "text-red-400"
+                                            : activeSession.status === 'PAUSED'
+                                                ? "text-cyan-400"
+                                                : "text-cyan-300"
+                                    )}
+                                >
+                                    <span className="text-[11px] font-bold tracking-wide text-blue-400">{username}</span>
+                                </span>
+                            )}
+                        </div> */}
+
+
                     </div>
                 ) : (
                     <div className={cn("transition-all duration-300", isOccupied ? "scale-100" : "scale-90 opacity-80")}>

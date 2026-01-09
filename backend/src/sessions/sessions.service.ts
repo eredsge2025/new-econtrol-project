@@ -354,8 +354,10 @@ export class SessionsService {
      */
     async extend(
         sessionId: string,
-        userId: string, // Admin/Cashier ID
-        extendDto: StartSessionDto // Reuse DTO for pricing info
+        userId: string, // Target User ID check? Actually redundant if we trust session.userId?
+        extendDto: StartSessionDto,
+        actorId?: string,
+        actorRole?: UserRole
     ) {
         // 1. Get Session
         const session = await this.prisma.session.findUnique({
@@ -367,6 +369,9 @@ export class SessionsService {
         if (session.status !== 'ACTIVE' && session.status !== 'PAUSED' && session.status !== 'EXPIRED') {
             throw new BadRequestException('Solo se pueden extender sesiones activas, pausadas o expiradas');
         }
+
+        // Determine Staff ID
+        const staffId = (actorRole === UserRole.STAFF || actorRole === UserRole.LAN_ADMIN || actorRole === UserRole.SUPER_ADMIN) ? actorId : null;
 
         // 2. Validate Pricing/Cost
         let cost = 0;
@@ -388,24 +393,8 @@ export class SessionsService {
         }
 
         // 3. Process Payment (Balance or Cash) implies Balance deduction
-        // If user is Guest or regular, check balance.
         const isAnonymous = !session.userId;
         const userBalance = isAnonymous ? 0 : Number(session.user?.balance || 0);
-
-        // Similar logic to Start: if balance low, error (unless Guest auto-recharge logic applied?)
-        // For extension, usually client pays Cash at counter -> Cashier recharges balance -> Extends.
-        // Or Cashier actions "Extend" which implies Cash payment received?
-        // Let's assume standard Balance Flow: User must have balance.
-        // If explicit "Cash" override exists in DTO? No.
-        // We'll enforce Balance. Cashier must "Recharge" user first if needed?
-        // OR: We implement auto-recharge transaction if Guest?
-        // Let's replicate start logic: if PrePaid and low balance, throw. (Cashier handles recharge separately, or we assume they did).
-
-        // Update: To make it smooth for "Cajero agrega 30min", likely User pays Cash.
-        // If I force "Recharge Balance" step, it's 2 actions.
-        // Ideally "Extend" action handles "Cash -> Recharge -> Extend" if needed.
-        // For now, simple logic: Check Balance.
-
 
         const isGuest = isAnonymous || (session.user?.username.startsWith('guest_') || session.user?.email.endsWith('@local.lan'));
 
@@ -415,20 +404,11 @@ export class SessionsService {
 
         // 4. Update Session and Transaction
         const updatedSession = await this.prisma.$transaction(async (tx) => {
-            // If Guest (User) or Registered User paying explicitly: Auto-Recharge (Cash/YAPE Payment)
             const finalPaymentMethod = extendDto.paymentMethod || 'CASH';
-            // Logic: 
-            // - If Anonymous: No balance, just Transaction(PAYMENT, Method).
-            // - If Registered: 
-            //    - If Method != BALANCE -> Transaction(RECHARGE, Method) -> User.Balance++ -> Transaction(PAYMENT, BALANCE) -> User.Balance--.
-            //    - If Method == BALANCE -> Just Deduct.
 
             if (cost > 0) {
                 if (isAnonymous) {
                     // Anonymous Extension
-                    // Logic handled below via transaction creation? 
-                    // Wait, current code handles isAnonymous logic mixed with isGuest.
-                    // Let's standardize.
                 } else {
                     // Registered (or Guest User)
                     const isExternal = finalPaymentMethod !== 'BALANCE';
@@ -446,7 +426,8 @@ export class SessionsService {
                                 balanceBefore: Number(userBalance),
                                 balanceAfter: Number(userBalance) + cost,
                                 description: `Recarga Automática (Extensión - ${finalPaymentMethod})`,
-                                paymentMethod: finalPaymentMethod
+                                paymentMethod: finalPaymentMethod,
+                                staffId // Record who performed the recharge
                             }
                         });
                     }
@@ -454,7 +435,6 @@ export class SessionsService {
             }
 
             // Deduct
-            // If anonymous, no balance to deduct. If guest/user, deduct.
             if (!isAnonymous) {
                 await tx.user.update({
                     where: { id: session.userId },
@@ -462,7 +442,6 @@ export class SessionsService {
                 });
             }
 
-            // Calculate current/new balance for record
             const balancePreDeduction = isGuest ? userBalance + cost : userBalance;
             const balancePostDeduction = balancePreDeduction - cost;
 
@@ -476,7 +455,8 @@ export class SessionsService {
                     balanceAfter: balancePostDeduction,
                     description: `Extensión de tiempo (${addedMinutes} min)`,
                     sessionId: session.id,
-                    paymentMethod: !isAnonymous ? 'BALANCE' : finalPaymentMethod
+                    paymentMethod: !isAnonymous ? 'BALANCE' : finalPaymentMethod,
+                    staffId // Record who performed the extension
                 }
             });
 
@@ -589,6 +569,9 @@ export class SessionsService {
             finalCost = Number(session.totalCost);
         }
 
+        // Determine Staff ID
+        const staffId = (userRole === UserRole.STAFF || userRole === UserRole.LAN_ADMIN || userRole === UserRole.SUPER_ADMIN) ? userId : null;
+
         // 5. Actualizar sesión y balance
         const [updatedSession] = await this.prisma.$transaction([
             // Actualizar sesión
@@ -637,6 +620,7 @@ export class SessionsService {
                         balanceBefore: session.user.balance,
                         balanceAfter: Number(session.user.balance) - finalCost,
                         description: `Pago de sesión (OPEN) - ${durationMinutes} min`,
+                        staffId,
                     }
                 })
             ]),
@@ -652,7 +636,8 @@ export class SessionsService {
                         balanceBefore: 0,
                         balanceAfter: 0,
                         description: `Pago de sesión Anónimo (OPEN) - ${durationMinutes} min`,
-                        paymentMethod: 'CASH'
+                        paymentMethod: 'CASH',
+                        staffId,
                     }
                 })
             ] : []),

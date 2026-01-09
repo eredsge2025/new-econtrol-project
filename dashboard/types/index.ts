@@ -142,3 +142,15 @@ export interface PendingApproval {
     createdAt: string;
     approvalStatus: ApprovalStatus;
 }
+
+export interface Transaction {
+    id: string;
+    amount: number;
+    type: string; // 'RECHARGE' | 'SESSION_PAYMENT' | 'STORE_PURCHASE' | 'REFUND' | 'PENALTY'
+    paymentMethod: string;
+    description?: string;
+    createdAt: string;
+    user?: Partial<User>;
+    staff?: Partial<User>;
+    session?: Partial<Session>;
+}

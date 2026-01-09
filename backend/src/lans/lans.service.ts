@@ -9,6 +9,7 @@ import { CreateLanDto } from './dto/create-lan.dto';
 import { UpdateLanDto } from './dto/update-lan.dto';
 import { LanEntity } from './entities/lan.entity';
 import { UserRole } from '@prisma/client';
+import { UpdateLanPaymentMethodDto } from './dto/update-payment-method.dto';
 
 @Injectable()
 export class LANsService {
@@ -216,4 +217,78 @@ export class LANsService {
             },
         };
     }
+
+    async getPaymentMethods(lanId: string) {
+        let methods = await this.prisma.lanPaymentMethod.findMany({
+            where: { lanId },
+            orderBy: { methodId: 'asc' },
+        });
+
+        if (methods.length === 0) {
+            const defaults = [
+                { methodId: 'CASH', displayName: 'Efectivo', isEnabled: true },
+                { methodId: 'YAPE', displayName: 'Yape', isEnabled: true },
+                { methodId: 'PLIN', displayName: 'Plin', isEnabled: true },
+                { methodId: 'CARD', displayName: 'Tarjeta', isEnabled: true },
+                { methodId: 'BALANCE', displayName: 'Saldo', isEnabled: true },
+            ];
+
+            await this.prisma.lanPaymentMethod.createMany({
+                data: defaults.map(d => ({ lanId, ...d })),
+            });
+
+            methods = await this.prisma.lanPaymentMethod.findMany({ where: { lanId } });
+        }
+
+        return methods;
+    }
+
+    async updatePaymentMethods(lanId: string, methods: UpdateLanPaymentMethodDto[]) {
+        return await this.prisma.$transaction(
+            methods.map(m =>
+                this.prisma.lanPaymentMethod.upsert({
+                    where: { lanId_methodId: { lanId, methodId: m.methodId } },
+                    update: {
+                        isEnabled: m.isEnabled,
+                        displayName: m.displayName,
+                        icon: m.icon,
+                        color: m.color,
+                        metadata: m.metadata || undefined,
+                    },
+                    create: {
+                        lanId,
+                        methodId: m.methodId,
+                        isEnabled: m.isEnabled,
+                        displayName: m.displayName,
+                        icon: m.icon,
+                        color: m.color,
+                        metadata: m.metadata || undefined,
+                    },
+                })
+            )
+        );
+    }
+
+    async createPaymentMethod(lanId: string, data: UpdateLanPaymentMethodDto) {
+        return await this.prisma.lanPaymentMethod.create({
+            data: {
+                lanId,
+                methodId: data.methodId,
+                displayName: data.displayName || data.methodId,
+                isEnabled: data.isEnabled ?? true,
+                icon: data.icon || 'Banknote',
+                color: data.color || 'text-gray-500',
+                metadata: data.metadata || undefined,
+            },
+        });
+    }
+
+    async deletePaymentMethod(lanId: string, methodId: string) {
+        return await this.prisma.lanPaymentMethod.delete({
+            where: {
+                lanId_methodId: { lanId, methodId },
+            },
+        });
+    }
 }
+

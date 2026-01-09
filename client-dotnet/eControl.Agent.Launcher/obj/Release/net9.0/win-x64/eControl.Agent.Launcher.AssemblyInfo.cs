@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("agent-launcher")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2a2e802f003a310e83dd67c50d999aee97ce4772")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c1b4fa7396ccbf3df3419eed2422b2a052d6f120")]
 [assembly: System.Reflection.AssemblyProductAttribute("agent-launcher")]
 [assembly: System.Reflection.AssemblyTitleAttribute("agent-launcher")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

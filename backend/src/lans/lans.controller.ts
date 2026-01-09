@@ -14,6 +14,7 @@ import {
 import { LANsService } from './lans.service';
 import { CreateLanDto } from './dto/create-lan.dto';
 import { UpdateLanDto } from './dto/update-lan.dto';
+import { UpdateLanPaymentMethodDto } from './dto/update-payment-method.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -65,4 +66,34 @@ export class LANsController {
     remove(@Param('id') id: string, @Request() req) {
         return this.lansService.remove(id, req.user.id, req.user.role);
     }
+
+    @Get(':id/payment-methods')
+    getPaymentMethods(@Param('id') id: string) {
+        return this.lansService.getPaymentMethods(id);
+    }
+
+    @Patch(':id/payment-methods')
+    updatePaymentMethods(
+        @Param('id') id: string,
+        @Body() methods: UpdateLanPaymentMethodDto[],
+    ) {
+        return this.lansService.updatePaymentMethods(id, methods);
+    }
+
+    @Post(':id/payment-methods')
+    createPaymentMethod(
+        @Param('id') id: string,
+        @Body() data: UpdateLanPaymentMethodDto,
+    ) {
+        return this.lansService.createPaymentMethod(id, data);
+    }
+
+    @Delete(':id/payment-methods/:methodId')
+    deletePaymentMethod(
+        @Param('id') id: string,
+        @Param('methodId') methodId: string,
+    ) {
+        return this.lansService.deletePaymentMethod(id, methodId);
+    }
 }
+

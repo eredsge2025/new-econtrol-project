@@ -9,6 +9,7 @@ import {
     HttpCode,
     HttpStatus,
     Query,
+    Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -47,7 +48,7 @@ export class UsersController {
 
     @Post(':id/recharge')
     @HttpCode(HttpStatus.OK)
-    recharge(@Param('id') id: string, @Body() body: { amount: number; lanId: string; paymentMethod?: string }) {
+    recharge(@Param('id') id: string, @Request() req, @Body() body: { amount: number; lanId: string; paymentMethod?: string }) {
         // Default to 'CASH' if not provided, but ideally frontend sends it.
         // Also validate lanId is present.
         if (!body.lanId) {
@@ -58,6 +59,6 @@ export class UsersController {
             // Throwing error if missing for now to enforce frontend update.
             if (!body.lanId) throw new Error("lanId is required for recharge");
         }
-        return this.usersService.updateBalance(id, body.amount, body.lanId, body.paymentMethod);
+        return this.usersService.updateBalance(id, body.amount, body.lanId, body.paymentMethod, req.user.id);
     }
 }
