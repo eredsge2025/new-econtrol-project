@@ -26,7 +26,11 @@ export class SessionsService {
      * Calcular costo por escalones de rate schedules
      * Retorna el schedule aplicable (próximo superior al tiempo jugado)
      */
-    private async calculateCostBySchedules(zoneId: string, durationMinutes: number) {
+    /**
+     * Calcular costo por escalones de rate schedules
+     * Retorna el schedule aplicable (próximo superior al tiempo jugado)
+     */
+    public async calculateCostBySchedules(zoneId: string, durationMinutes: number) {
         const schedules = await this.prisma.rateSchedule.findMany({
             where: {
                 zoneId,
@@ -38,6 +42,9 @@ export class SessionsService {
         });
 
         if (schedules.length === 0) {
+            // Check global or default? For now return 0 if no rates, or throw.
+            // Throwing might break monitoring loop, so return safe default?
+            // Existing logic throws BadRequestException. Monitor should catch it.
             throw new BadRequestException('Esta zona no tiene tarifas configuradas');
         }
 
@@ -51,13 +58,14 @@ export class SessionsService {
             };
         }
 
-        // Si excede todos los schedules, cobrar el más alto
+        // Si excede todos los schedules, cobrar el más alto (o extrapolar? Logic says highest)
         const highest = schedules[schedules.length - 1];
         return {
             schedule: highest,
             cost: parseFloat(highest.price.toString()),
         };
     }
+
 
     /**
      * Iniciar sesión
@@ -190,6 +198,11 @@ export class SessionsService {
             const { cost: calculatedCost } = await this.calculateCostBySchedules(pc.zoneId, durationMinutes);
             cost = calculatedCost;
             isPrePaid = true;
+        } else if (startDto.pricingType === PricingType.OPEN) {
+            // Indefinite Session: Starts with 0 cost, pays at end
+            cost = 0;
+            durationMinutes = 0;
+            isPrePaid = false;
         }
 
         // Validate Balance or Auto-Recharge (if Guest/Admin initiated)
@@ -546,7 +559,14 @@ export class SessionsService {
 
         // 4. Calcular cobro si NO es prepagado
         let finalCost = 0;
-        if (!session.isPaid) {
+        let finalStatus = 'COMPLETED';
+
+        // LOGICA DE GRACIA (Undo para Sesiones Libres)
+        // Si es OPEN y duró menos de 2 minutos, se cancela/aborta sin cobro
+        if (session.pricingType === 'OPEN' && durationMinutes < 2) {
+            finalCost = 0;
+            finalStatus = 'ABORTED';
+        } else if (!session.isPaid) {
             const { cost } = await this.calculateCostBySchedules(
                 session.pc.zoneId,
                 durationMinutes,
@@ -554,12 +574,12 @@ export class SessionsService {
             finalCost = cost;
 
             // Validar balance solo si hay usuario
-            if (session.userId) {
+            if (session.userId && endDto.paymentMethod === 'BALANCE') {
                 const userBalance = parseFloat(session.user.balance.toString());
-                if (userBalance < finalCost) {
-                    // Warn but allow forcing end? Or block? 
-                    // Blocking is dangerous for "End Session".
-                    // For now, we block as per previous logic, but strictly only for registered users.
+                // FIX: Permitir balance negativo (deuda) SOLO para sesiones OPEN.
+                // Si es FIXED/BUNDLE y no alcanza, debe fallar (aunque esto se valida al inicio/extensión).
+                // Pero OPEN es Post-Pago.
+                if (session.pricingType !== 'OPEN' && userBalance < finalCost) {
                     throw new BadRequestException(
                         `Balance insuficiente. Costo: S/ ${finalCost}, Balance: S/ ${userBalance}`,
                     );
@@ -572,62 +592,86 @@ export class SessionsService {
         // Determine Staff ID
         const staffId = (userRole === UserRole.STAFF || userRole === UserRole.LAN_ADMIN || userRole === UserRole.SUPER_ADMIN) ? userId : null;
 
-        // 5. Actualizar sesión y balance
-        const [updatedSession] = await this.prisma.$transaction([
-            // Actualizar sesión
-            this.prisma.session.update({
+        // 5. Actualizar sesión y balance con Transaction Function
+        const updatedSession = await this.prisma.$transaction(async (tx) => {
+            // A. Auto-Recharge para pagos externos (CASH, YAPE, etc.)
+            let balanceBeforePayment = 0;
+
+            if (session.userId && !session.isPaid && endDto.paymentMethod !== 'BALANCE') {
+                // Get current balance
+                const currentUser = await tx.user.findUnique({ where: { id: session.userId } });
+                const currentBalance = Number(currentUser?.balance || 0);
+
+                // Increment Balance (Recharge)
+                await tx.user.update({
+                    where: { id: session.userId },
+                    data: { balance: { increment: finalCost } }
+                });
+
+                // Create RECHARGE Transaction
+                await tx.transaction.create({
+                    data: {
+                        userId: session.userId,
+                        lanId: session.lanId,
+                        type: 'RECHARGE',
+                        amount: finalCost,
+                        balanceBefore: currentBalance,
+                        balanceAfter: currentBalance + finalCost,
+                        description: `Recarga Automática (Fin Sesión - ${endDto.paymentMethod})`,
+                        paymentMethod: endDto.paymentMethod,
+                        staffId
+                    }
+                });
+
+                balanceBeforePayment = currentBalance + finalCost;
+            } else if (session.userId) {
+                const currentUser = await tx.user.findUnique({ where: { id: session.userId } });
+                balanceBeforePayment = Number(currentUser?.balance || 0);
+            }
+
+            // B. Actualizar Sesión
+            const s = await tx.session.update({
                 where: { id },
                 data: {
                     endedAt: endTime,
                     durationSeconds,
-                    totalCost: session.isPaid ? session.totalCost : finalCost, // Keep original if paid
-                    status: 'COMPLETED',
+                    totalCost: session.isPaid ? session.totalCost : finalCost,
+                    status: finalStatus as any,
                     paymentMethod: endDto.paymentMethod,
                 },
                 include: {
-                    user: {
-                        select: {
-                            id: true,
-                            username: true,
-                            email: true,
-                        },
-                    },
-                    pc: {
-                        include: {
-                            zone: true,
-                        },
-                    },
+                    user: { select: { id: true, username: true, email: true } },
+                    pc: { include: { zone: true } },
                 },
-            }),
+            });
 
-            // Descontar del balance SOLO SI NO ESTABA PAGADO y hay usuario
-            ...(session.isPaid || !session.userId ? [] : [
-                this.prisma.user.update({
+            // C. Descontar del balance (Payment)
+            if (session.userId && !session.isPaid) {
+                await tx.user.update({
                     where: { id: session.userId },
                     data: {
-                        balance: {
-                            decrement: finalCost,
-                        },
+                        balance: { decrement: finalCost },
                         activePcId: null,
                     },
-                }),
-                this.prisma.transaction.create({
+                });
+
+                await tx.transaction.create({
                     data: {
                         userId: session.userId,
                         lanId: session.lanId,
                         type: 'SESSION_PAYMENT',
                         amount: finalCost,
-                        balanceBefore: session.user.balance,
-                        balanceAfter: Number(session.user.balance) - finalCost,
+                        balanceBefore: balanceBeforePayment,
+                        balanceAfter: balanceBeforePayment - finalCost,
                         description: `Pago de sesión (OPEN) - ${durationMinutes} min`,
+                        paymentMethod: 'BALANCE', // Internal consistency
                         staffId,
+                        sessionId: s.id
                     }
-                })
-            ]),
-
-            // Si es anónimo (no userId), solo registrar transacción de pago CASH (sin balance)
-            ...(!session.isPaid && !session.userId ? [
-                this.prisma.transaction.create({
+                });
+            } else if (!session.userId && !session.isPaid) {
+                // Anonymous Payment
+                await tx.transaction.create({
                     data: {
                         userId: null,
                         lanId: session.lanId,
@@ -636,30 +680,29 @@ export class SessionsService {
                         balanceBefore: 0,
                         balanceAfter: 0,
                         description: `Pago de sesión Anónimo (OPEN) - ${durationMinutes} min`,
-                        paymentMethod: 'CASH',
+                        paymentMethod: endDto.paymentMethod,
                         staffId,
+                        sessionId: s.id
                     }
-                })
-            ] : []),
+                });
+            }
 
-            // Si ya estaba pagado, igual liberamos al usuario de activePcId (si existe)
-            ...(session.isPaid && session.userId ? [
-                this.prisma.user.update({
+            // D. Si ya estaba pagado, liberar activePcId
+            if (session.isPaid && session.userId) {
+                await tx.user.update({
                     where: { id: session.userId },
-                    data: {
-                        activePcId: null,
-                    },
-                })
-            ] : []),
+                    data: { activePcId: null },
+                });
+            }
 
-            // Liberar PC
-            this.prisma.pC.update({
+            // E. Liberar PC
+            await tx.pC.update({
                 where: { id: session.pcId },
-                data: {
-                    status: PCStatus.AVAILABLE,
-                },
-            }),
-        ]);
+                data: { status: PCStatus.AVAILABLE },
+            });
+
+            return s;
+        });
 
         const pcWithLan = await this.getPcWithSession(session.pcId);
 
@@ -746,6 +789,44 @@ export class SessionsService {
         }
 
         return new SessionEntity(session);
+    }
+
+    async calculateCurrentSessionCost(session: any): Promise<number> {
+        if (session.pricingType === PricingType.FIXED || session.pricingType === PricingType.BUNDLE) {
+            // Prepaid sessions have 0 current cost (already paid or debt registered at start)
+            // Unless we want to show 'consumed value'? But for termination, cost is 0.
+            return 0;
+        }
+
+        if (session.pricingType === PricingType.OPEN) {
+            const now = new Date();
+            const start = session.startedAt;
+            const durationMs = now.getTime() - start.getTime();
+            const durationMinutes = Math.ceil(durationMs / 60000);
+
+            // Grace period check (e.g. < 2 min is free) - matching 'end' logic
+            if (durationMinutes < 2) return 0;
+
+            const { cost } = await this.calculateCostBySchedules(session.pc.zoneId, durationMinutes);
+            return cost;
+        }
+
+        return 0;
+    }
+
+    async forceEndSession(sessionId: string, reason: string) {
+        // System triggered end (e.g. balance depletion)
+        const session = await this.prisma.session.findUnique({ where: { id: sessionId } });
+        if (!session) return;
+
+        await this.end(
+            session.id,
+            session.userId,
+            'SUPER_ADMIN' as any, // System acts as Admin
+            { paymentMethod: 'BALANCE' } as any // Force End usually implies Balance settlement or Debt
+        );
+
+        this.logger.log(`Session ${sessionId} force ended. Reason: ${reason}`);
     }
 
     /**

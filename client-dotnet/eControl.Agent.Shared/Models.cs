@@ -140,7 +140,8 @@ namespace eControl.Agent.Shared
         GetSessionStatus,
         GetRates,
         GetBundles,
-        PurchaseRequest
+        PurchaseRequest,
+        EndSessionRequest
     }
 
     public class PipeMessage
@@ -155,9 +156,10 @@ namespace eControl.Agent.Shared
         public bool IsLocked { get; set; }
         public DateTime? ExpiresAt { get; set; }
         public DateTime? StartedAt { get; set; }
-        public double RemainingSeconds { get; set; }
+        public double? RemainingSeconds { get; set; }
         public string? ActiveUser { get; set; }
         public decimal UserBalance { get; set; }
+        public string? SessionType { get; set; } // OPEN, FIXED, BUNDLE
     }
 
     public class RateDto
@@ -192,6 +194,11 @@ namespace eControl.Agent.Shared
         public string UserId { get; set; } = string.Empty;
         public string Type { get; set; } = "RATE"; // RATE or BUNDLE
         public string PaymentMethod { get; set; } = "BALANCE";
+    }
+
+    public class EndSessionRequestPayload
+    {
+        public string UserId { get; set; } = string.Empty;
     }
 
     public class PurchaseResponse

@@ -209,7 +209,8 @@
                             </Border>
 
                             <!-- Play Button PREMIUM -->
-                            <Border BoxShadow="0 10 25 0 #550A84FF" CornerRadius="12">
+                            <Border BoxShadow="0 10 25 0 #550A84FF" CornerRadius="12"
+                                IsVisible="{Binding IsPlayNowVisible}">
                                 <Button Command="{Binding StartSessionCommand}"
                                     Classes="gaming-primary"
                                     HorizontalAlignment="Stretch"
@@ -241,6 +242,40 @@
                                                     FontSize="11" Opacity="0.8"
                                                     HorizontalAlignment="Center"
                                                     FontWeight="Medium" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </Button>
+                            </Border>
+
+                            <!-- End Session Button (Visible ONLY for OPEN sessions) -->
+                            <Border BoxShadow="0 10 25 0 #55D32F2F" CornerRadius="12"
+                                IsVisible="{Binding IsEndSessionVisible}">
+                                <Button Command="{Binding EndSessionCommand}"
+                                    Classes="gaming-primary"
+                                    HorizontalAlignment="Stretch"
+                                    Height="90"
+                                    Padding="0"
+                                    Background="#D32F2F">
+                                    <Border CornerRadius="12" ClipToBounds="True">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0%,0%"
+                                                EndPoint="100%,100%">
+                                                <GradientStop Color="#D32F2F" Offset="0" />
+                                                <GradientStop Color="#B71C1C" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                        <Grid>
+                                            <Border Background="#11FFFFFF" VerticalAlignment="Top"
+                                                Height="30" Opacity="0.5" />
+                                            <StackPanel VerticalAlignment="Center"
+                                                HorizontalAlignment="Center" Spacing="8">
+                                                <TextBlock Text="⏹ FINALIZAR SESIÓN"
+                                                    FontSize="20" FontWeight="Black"
+                                                    HorizontalAlignment="Center" LetterSpacing="1" />
+                                                <TextBlock Text="Terminar tiempo libre"
+                                                    FontSize="11" Opacity="0.8"
+                                                    HorizontalAlignment="Center" FontWeight="Medium" />
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -308,7 +343,8 @@
                             Background="#0D1117"
                             CornerRadius="20"
                             Padding="30"
-                            BoxShadow="inset 0 2 10 0 #22000000">
+                            BoxShadow="inset 0 2 10 0 #22000000"
+                            IsVisible="{Binding IsStoreVisible}">
                             <Border.BorderBrush>
                                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
                                     <GradientStop Color="#221E2532" Offset="0" />

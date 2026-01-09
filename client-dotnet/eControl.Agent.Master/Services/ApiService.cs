@@ -282,5 +282,28 @@ namespace eControl.Agent.Master.Services
                  return new PurchaseResponse { Success = false, Message = ex.Message };
              }
         }
+        public async Task<bool> EndSessionAsync(string pcId, string userId)
+        {
+             try
+             {
+                 var body = new { userId, pcId };
+                 var content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+                 var response = await _httpClient.PostAsync("/agents/session/end", content);
+                 
+                 if (!response.IsSuccessStatusCode)
+                 {
+                     var error = await response.Content.ReadAsStringAsync();
+                     LogToFile($"EndSession Error: {response.StatusCode} - {error}");
+                 }
+
+                 return response.IsSuccessStatusCode;
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogError(ex, "ApiService: EndSession Failed");
+                 LogToFile($"EndSession Exception: {ex.Message}");
+                 return false;
+             }
+        }
     }
 }

@@ -101,5 +101,19 @@ namespace eControl.Agent.UI.Services
             try { return JsonConvert.DeserializeObject<PurchaseResponse>(responseJson) ?? new PurchaseResponse { Success = false, Message = "Invalid response" }; }
             catch { return new PurchaseResponse { Success = false, Message = "Parse error" }; }
         }
+        public async Task<bool> EndSessionAsync(string userId)
+        {
+            var payload = JsonConvert.SerializeObject(new EndSessionRequestPayload { UserId = userId });
+            var responseJson = await SendMessageAsync(PipeMessageType.EndSessionRequest, payload);
+            try
+            {
+                dynamic result = JsonConvert.DeserializeObject(responseJson);
+                return result?.Success == true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

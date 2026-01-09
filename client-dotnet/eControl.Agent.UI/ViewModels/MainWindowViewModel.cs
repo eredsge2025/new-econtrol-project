@@ -46,6 +46,7 @@ namespace eControl.Agent.UI.ViewModels
         [ObservableProperty] private string _horizontalAlignment = "Stretch";
         [ObservableProperty] private string _background = "#1A1A1A";
         [ObservableProperty] private decimal _userBalance;
+        [ObservableProperty] private string? _sessionType;
 
         public MainWindowViewModel()
         {
@@ -142,11 +143,29 @@ namespace eControl.Agent.UI.ViewModels
                                              DisplayName = status.ActiveUser;
                                          }
                                          
-                                         // Sync Balance
+                                          // Update Balance & SessionType
                                          UserBalance = status.UserBalance;
+                                         SessionType = status.SessionType;
                                          if (_dashboardWindow?.DataContext is DashboardViewModel dvm)
                                          {
-                                             dvm.UserBalance = UserBalance;
+                                              var oldSessionType = dvm.SessionType;
+                                              LogToFile($"[MainWindowVM Poll] Updating Dashboard. Old SessionType='{oldSessionType}', New SessionType='{status.SessionType}', IsActive={status.IsActive}");
+                                              
+                                              Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                                              {
+                                                  if (status.UserBalance != dvm.UserBalance)
+                                                  {
+                                                      LogToFile($"[MainWindowVM Poll] Balance changed from {dvm.UserBalance} to {status.UserBalance}");
+                                                      dvm.UserBalance = status.UserBalance;
+                                                  }
+                                                  
+                                                  if (status.SessionType != dvm.SessionType)
+                                                  {
+                                                      LogToFile($"[MainWindowVM Poll] Setting Dashboard.SessionType from '{dvm.SessionType}' to '{status.SessionType}'");
+                                                      dvm.SessionType = status.SessionType;
+                                                  }
+                                                  dvm.UpdateUiVisibility(SessionType);
+                                              });
                                          }
                                      }
                                      else
@@ -418,6 +437,7 @@ namespace eControl.Agent.UI.ViewModels
              Password = "";
              ErrorMessage = "";
              IsLoggedIn = false;
+             SessionType = null;
              // Ensure Login/Idle screen is visible when reset, mainly for "Guest Session End" scenarios
              ShowLoginForm = true;
              IsSessionActive = false;
@@ -455,7 +475,7 @@ namespace eControl.Agent.UI.ViewModels
 
             if (_dashboardWindow == null)
             {
-                var vm = new DashboardViewModel(_currentUserId, PcName, DisplayName, UserBalance);
+                var vm = new DashboardViewModel(_currentUserId, PcName, DisplayName, UserBalance, SessionType);
                 vm.OnSessionStarted += () => 
                 {
                     Avalonia.Threading.Dispatcher.UIThread.Post(() => 

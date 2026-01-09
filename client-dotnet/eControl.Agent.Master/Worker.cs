@@ -58,8 +58,10 @@ namespace eControl.Agent.Master
                 case PipeMessageType.GetSessionStatus:
                     try
                     {
+                        LogToFile($"[Worker] GetSessionStatus: Called. _currentSessionData length={(_currentSessionData?.Length ?? 0)}");
                         if (string.IsNullOrEmpty(_currentSessionData) || _currentSessionData == "{}")
                         {
+                            LogToFile($"[Worker] GetSessionStatus: No session data. Returning IsActive=false");
                             return JsonConvert.SerializeObject(new SessionStatusResponse 
                             { 
                                 IsActive = false, 
@@ -121,9 +123,33 @@ namespace eControl.Agent.Master
                                 activeUser = (string)pcData.activeUser.username ?? (string)pcData.activeUser.email ?? "User";
                                 if (pcData.activeUser.balance != null && pcData.activeUser.balance.Type != Newtonsoft.Json.Linq.JTokenType.Null)
                                 {
-                                    userBalance = (decimal)pcData.activeUser.balance;
+                                    var balToken = pcData.activeUser.balance;
+                                    if (balToken.Type == Newtonsoft.Json.Linq.JTokenType.String)
+                                         decimal.TryParse((string)balToken, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out userBalance);
+                                    else
+                                         userBalance = (decimal)balToken;
                                 }
                             }
+
+                            string sessionType = "FIXED";
+                            if (session.pricingType != null && session.pricingType.Type != Newtonsoft.Json.Linq.JTokenType.Null)
+                            {
+                                sessionType = (string)session.pricingType;
+                            }
+
+                            // Extract Real-Time Cost from Backend (if supported)
+                            decimal currentCost = 0;
+                            if (session.currentCost != null && session.currentCost.Type != Newtonsoft.Json.Linq.JTokenType.Null)
+                            {
+                                var costToken = session.currentCost;
+                                if (costToken.Type == Newtonsoft.Json.Linq.JTokenType.String)
+                                     decimal.TryParse((string)costToken, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out currentCost);
+                                else
+                                     currentCost = (decimal)costToken;
+                            }
+                            
+                            // Adjust Balance to show "Remaining/Net Balance"
+                            userBalance -= currentCost;
 
                             return JsonConvert.SerializeObject(new SessionStatusResponse
                             {
@@ -133,14 +159,21 @@ namespace eControl.Agent.Master
                                 StartedAt = startedAt,
                                 RemainingSeconds = remaining,
                                 ActiveUser = activeUser,
-                                UserBalance = userBalance
+                                UserBalance = userBalance,
+                                SessionType = sessionType
                             });
+                        }
+                        else
+                        {
+                            LogToFile($"[Worker] GetSessionStatus: No ACTIVE session found in data. Returning IsActive=false");
                         }
                     }
                     catch (Exception ex)
                     {
+                         LogToFile($"[Worker] GetSessionStatus: Exception: {ex.Message}");
                          _logger.LogError(ex, "Error parsing session status");
                     }
+                     LogToFile($"[Worker] GetSessionStatus: Returning IsActive=false (fallback)");
                      return JsonConvert.SerializeObject(new SessionStatusResponse 
                             { 
                                 IsActive = false, 
@@ -279,6 +312,32 @@ namespace eControl.Agent.Master
                      }
                      LogToFile("Pipe: PurchaseRequest - FAILED: Master not ready (_pcInfo/ApiService null)");
                      return JsonConvert.SerializeObject(new PurchaseResponse { Success = false, Message = "Servicio no disponible" });
+
+                case PipeMessageType.EndSessionRequest:
+                    LogToFile($"Pipe: EndSessionRequest received.");
+                     if (_pcInfo != null && _apiService != null)
+                     {
+                         var endData = JsonConvert.DeserializeObject<EndSessionRequestPayload>(message.Payload);
+                         string userId = endData?.UserId ?? "";
+                         
+                         // Fallback to active user from cache if not provided
+                         if (string.IsNullOrEmpty(userId)) {
+                             try {
+                                 dynamic pcData = JsonConvert.DeserializeObject(_currentSessionData)!;
+                                 if (pcData.activeUser != null) userId = pcData.activeUser.id;
+                             } catch {}
+                         }
+
+                         var success = await _apiService.EndSessionAsync(_pcInfo.PcId, userId);
+                         
+                         // Force local session end to clean up "stuck" UI states
+                         // even if backend says "No active session" (success=false)
+                         LogToFile($"Pipe: EndSessionRequest - ApiResult: {success}. Forcing local session end.");
+                         HandleSessionEnded();
+
+                         return JsonConvert.SerializeObject(new { Success = success });
+                     }
+                     return JsonConvert.SerializeObject(new { Success = false, Message = "Service not ready" });
             }
 
             return "Unknown";
@@ -606,6 +665,7 @@ namespace eControl.Agent.Master
 
         private void HandleSessionEnded()
         {
+            LogToFile($"[Worker] HandleSessionEnded: Called. Previous status={_currentStatus}");
             _logger.LogInformation("🔒 Session Ended via Socket! Locking...");
              _currentSessionData = "{}";
 
@@ -613,6 +673,7 @@ namespace eControl.Agent.Master
             _currentStatus = AgentStatusInternal.LOCKED;
             // 2. Lock System
             _securityService.SetKioskMode(true);
+            LogToFile($"[Worker] HandleSessionEnded: Completed. New status={_currentStatus}, Kiosk mode=ON");
         }
         
         private void HandleSessionUpdated(string payload)

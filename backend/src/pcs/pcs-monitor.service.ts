@@ -1,4 +1,5 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, Inject, forwardRef } from '@nestjs/common';
+import { SessionsService } from '../sessions/sessions.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PCStatus } from '@prisma/client';
 import { exec } from 'child_process';
@@ -12,13 +13,18 @@ export class PcsMonitorService implements OnModuleInit {
 
     constructor(
         private prisma: PrismaService,
-        private pcsGateway: PcsGateway
+        private pcsGateway: PcsGateway,
+        @Inject(forwardRef(() => SessionsService))
+        private sessionsService: SessionsService,
     ) { }
 
     onModuleInit() {
         this.logger.log('Monitor de PCs real-time iniciado');
         // Ejecutar revisión cada 5 segundos para detección rápida
         setInterval(() => this.checkPcsStatus(), 5000);
+
+        // Check open sessions every 10 seconds
+        setInterval(() => this.checkOpenSessions(), 10000);
 
         // Ejecutar "Zombie Sweeper" cada 5 minutos (300,000 ms)
         // Detecta PCs que esten OFFLINE pero respondan Ping (encendidas sin gente)
@@ -106,9 +112,10 @@ export class PcsMonitorService implements OnModuleInit {
             include: { zone: true },
         });
 
-        if (pcs.length > 0) {
-            this.logger.debug(`Chequeando ${pcs.length} PCs. Threshold: ${this.HEARTBEAT_THRESHOLD_SECONDS}s`);
-        }
+        // Reduced verbosity for frequent checks
+        // if (pcs.length > 0) {
+        //     this.logger.debug(`Chequeando ${pcs.length} PCs. Threshold: ${this.HEARTBEAT_THRESHOLD_SECONDS}s`);
+        // }
 
         for (const pc of pcs) {
             if (!pc.lastHeartbeat) continue;
@@ -138,6 +145,40 @@ export class PcsMonitorService implements OnModuleInit {
 
                 await this.updatePcStatus(pc, newStatus);
                 this.logger.log(`Status actualizado para ${pc.name}: ${oldStatus} -> ${newStatus}`);
+            }
+        }
+    }
+
+    private async checkOpenSessions() {
+        const activeOpenSessions = await this.prisma.session.findMany({
+            where: {
+                status: 'ACTIVE',
+                pricingType: 'OPEN',
+                paymentMethod: 'BALANCE', // Only monitor BALANCE for auto-termination
+                userId: { not: null }
+            },
+            include: { user: true, pc: { include: { zone: true } } }
+        });
+
+        if (activeOpenSessions.length > 0) {
+            // this.logger.debug(`Checking ${activeOpenSessions.length} open sessions for balance depletion...`);
+        }
+
+        for (const session of activeOpenSessions) {
+            try {
+                const currentCost = await this.sessionsService.calculateCurrentSessionCost(session);
+                const userBalance = Number(session.user?.balance || 0);
+
+                // Margin of error 0.00? Exact match.
+                // Or verify if balance < cost (should be impossible if paid incrementally? No, cost grows, balance specific constant here)
+                // Balance is static (unless updated elsewhere). Cost grows.
+
+                if (currentCost >= userBalance) {
+                    this.logger.warn(`Session ${session.id} (User: ${session.user?.username}) depleted balance (Cost: ${currentCost} >= Balance: ${userBalance}). Force Ending.`);
+                    await this.sessionsService.forceEndSession(session.id, 'Balance Depleted');
+                }
+            } catch (e) {
+                this.logger.error(`Error checking session ${session.id}: ${e.message}`);
             }
         }
     }

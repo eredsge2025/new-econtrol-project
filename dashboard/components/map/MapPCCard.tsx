@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { rateSchedulesApi } from '@/lib/api';
 import { Monitor, User, Clock, AlertTriangle, Power } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -38,7 +40,15 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
     const dragOffset = useRef({ x: 0, y: 0 });
 
     // Status styling configuration
-    const getStatusStyle = (status: string, hasUser: boolean, sessionStatus?: string) => {
+    const getStatusStyle = (status: string, hasUser: boolean, sessionStatus?: string, pricingType?: string) => {
+        if (pricingType === 'OPEN' && sessionStatus === 'ACTIVE') {
+            return {
+                container: 'bg-gray-50/90 border-gray-200 dark:bg-gray-950/20 dark:border-orange-500',
+                text: 'text-sky-700 dark:text-orange-300',
+                indicator: 'bg-sky-500',
+                icon: 'text-sky-600 dark:text-sky-400'
+            };
+        }
         if (sessionStatus === 'PAUSED' || (status === 'OFFLINE' && hasUser)) {
             return {
                 container: 'bg-gray-50/90 border-gray-200 dark:bg-gray-950/20 dark:border-gray-800',
@@ -114,14 +124,27 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
     // Timer Logic (Moved up for style dep)
     const activeSession = pc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
 
-    const styles = getStatusStyle(pc.status, !!pc.activeUser, activeSession?.status);
+    const styles = getStatusStyle(pc.status, !!pc.activeUser, activeSession?.status, activeSession?.pricingType);
     const [timeLeft, setTimeLeft] = useState<string>('');
+    const [currentCost, setCurrentCost] = useState<number>(Number(activeSession?.totalCost || 0));
+
+    // Fetch rates for cost calculation
+    const { data: rates } = useQuery({
+        queryKey: ['rates', pc.zoneId],
+        queryFn: () => rateSchedulesApi.getByZone(pc.zoneId),
+        enabled: !!pc.zoneId && !!(activeSession?.pricingType === 'OPEN' && activeSession.status === 'ACTIVE'),
+        staleTime: 1000 * 60 * 5 // Cache for 5 mins
+    });
 
     useEffect(() => {
         if (!activeSession) {
             setTimeLeft('');
+            setCurrentCost(0);
             return;
         }
+
+        // Initialize cost
+        setCurrentCost(Number(activeSession.totalCost || 0));
 
         const updateTimer = () => {
             const now = new Date();
@@ -146,19 +169,35 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
                 const s = diff % 60;
                 setTimeLeft(`${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
             } else {
+                // OPEN / POSTPAID (Non-expiring)
                 const start = new Date(activeSession.startedAt);
                 const diff = Math.floor((now.getTime() - start.getTime()) / 1000);
                 const h = Math.floor(diff / 3600);
                 const m = Math.floor((diff % 3600) / 60);
                 const s = diff % 60;
                 setTimeLeft(`${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+
+                // Calculate Cost for OPEN sessions locally
+                if (activeSession.pricingType === 'OPEN' && rates && rates.length > 0) {
+                    const elapsedMinutes = Math.ceil(diff / 60); // diff is seconds
+                    // Grace period check (visual only)
+                    if (elapsedMinutes < 2) {
+                        setCurrentCost(0);
+                    } else {
+                        // Find applicable rate using fetched rates
+                        const sortedRates = [...rates].sort((a: any, b: any) => a.minutes - b.minutes);
+                        const match = sortedRates.find((r: any) => r.minutes >= elapsedMinutes);
+                        const finalRate = match || sortedRates[sortedRates.length - 1];
+                        setCurrentCost(Number(finalRate.price));
+                    }
+                }
             }
         };
 
         updateTimer();
         const interval = setInterval(updateTimer, 1000);
         return () => clearInterval(interval);
-    }, [activeSession]);
+    }, [activeSession, rates]);
 
     // Dragging Logic
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -260,7 +299,7 @@ export function MapPCCard({ pc, isEditing, onPositionChange, onClick, containerR
                                     {timeLeft || "00:00"}
                                 </span>
                                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                                    S/{Number(activeSession.totalCost || 0).toFixed(2)}
+                                    S/{currentCost.toFixed(2)}
                                 </span>
                             </>
                         )}

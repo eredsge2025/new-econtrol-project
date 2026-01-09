@@ -604,13 +604,47 @@ export class PcsService {
             include: { transactions: { orderBy: { createdAt: 'desc' } } }
         });
 
+        // Enrich with Real-Time Cost
+        const sessionsWithCost = await Promise.all(freshSessions.map(async (s) => {
+            let currentCost = 0;
+            try {
+                // Calculate cost only for OPEN or active sessions to show real-time spending
+                // We use the service method which handles logic for RATE/BUNDLE/OPEN
+                // Cast to any to avoid strict type issues with Partial<Session> matching
+                currentCost = await this.sessionsService.calculateCurrentSessionCost(s as any);
+            } catch (e) {
+                this.logger.warn(`Failed to calculate cost for session ${s.id}: ${e.message}`);
+            }
+            return { ...s, currentCost };
+        }));
+
         // Ensure Gateway emits sessions so Dashboard sees them!
-        const pcForEmit = { ...pc, sessions: freshSessions, status: effectiveStatus };
+        const pcForEmit = { ...pc, sessions: sessionsWithCost, status: effectiveStatus };
         this.pcsGateway.emitStatusUpdate(pcForEmit, updatedPc.zone.lanId);
 
+        // CRITICAL FIX: Re-fetch activeUser to ensure it's included in response
+        // This prevents race conditions where activeUser becomes null after status changes
+        const pcWithUser = await this.prisma.pC.findUnique({
+            where: { id },
+            include: {
+                zone: true,
+                activeUser: {
+                    select: {
+                        id: true,
+                        username: true,
+                        email: true,
+                        balance: true,
+                        membershipTier: true,
+                        lastVisit: true,
+                        activePcId: true
+                    }
+                }
+            }
+        });
+
         return {
-            ...updatedPc,
-            sessions: freshSessions,
+            ...(pcWithUser || updatedPc),  // Use freshly fetched PC with activeUser
+            sessions: sessionsWithCost,
             success: true,
             shouldUpdate: false,
         };

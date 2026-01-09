@@ -216,10 +216,11 @@ function ZoneLayer({ zoneId, lanId, isEditing, onPositionChange, onPcClick, cont
 
 
 // Helper component for the Active Session Card
-function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session: any, onEnd: () => void, onUndo: () => void, isPendingUndo: boolean }) {
+function ActiveSessionCard({ session, rates, onEnd, onUndo, isPendingUndo }: { session: any, rates?: any[], onEnd: () => void, onUndo: () => void, isPendingUndo: boolean }) {
     const [duration, setDuration] = useState<string>('00:00:00');
     const [timeLeft, setTimeLeft] = useState<string>('');
     const [progress, setProgress] = useState(0);
+    const [currentCost, setCurrentCost] = useState<number>(Number(session.totalCost || 0));
 
     const isPaused = session.status === 'PAUSED';
     const isExpired = session.status === 'EXPIRED';
@@ -246,11 +247,24 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
                     setTimeLeft(`${rHours.toString().padStart(2, '0')}:${rMinutes.toString().padStart(2, '0')}:${rSeconds.toString().padStart(2, '0')}`);
 
                     const totalDuration = end.getTime() - start.getTime();
-                    const elapsed = now.getTime() - start.getTime();
-                    setProgress(Math.min((elapsed / totalDuration) * 100, 100));
+                    setProgress(Math.min((diffMs / totalDuration) * 100, 100));
                 } else {
                     setTimeLeft('00:00:00');
                     setProgress(100);
+                }
+            } else if (session.pricingType === 'OPEN' && rates && rates.length > 0) {
+                // Open Session Cost Calculation
+                const elapsedMinutes = Math.ceil(diffMs / 60000);
+
+                // Grace period check (visual only)
+                if (elapsedMinutes < 2) {
+                    setCurrentCost(0);
+                } else {
+                    // Find applicable rate
+                    const sortedRates = [...rates].sort((a, b) => a.minutes - b.minutes);
+                    const match = sortedRates.find(r => r.minutes >= elapsedMinutes);
+                    const finalRate = match || sortedRates[sortedRates.length - 1];
+                    setCurrentCost(Number(finalRate.price));
                 }
             }
         };
@@ -258,7 +272,7 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
         updateTimer();
         const interval = setInterval(updateTimer, 1000);
         return () => clearInterval(interval);
-    }, [session]);
+    }, [session, rates]);
 
     return (
         <div className={`
@@ -314,7 +328,7 @@ function ActiveSessionCard({ session, onEnd, onUndo, isPendingUndo }: { session:
             <div className="grid grid-cols-2 gap-2">
                 <div className="bg-zinc-950/30 p-3 rounded-lg border border-emerald-800 flex flex-col items-center">
                     <span className="text-[10px] uppercase text-zinc-500 font-semibold tracking-wider mb-0.5">Costo</span>
-                    <span className={`text-lg font-bold ${isExpired ? 'text-red-500' : 'text-emerald-500'}`}>S/ {Number(session.totalCost || 0).toFixed(2)}</span>
+                    <span className={`text-lg font-bold ${isExpired ? 'text-red-500' : 'text-emerald-500'}`}>S/ {currentCost.toFixed(2)}</span>
                 </div>
                 <div className="bg-zinc-900/50 p-3 rounded-lg border border-sky-800 flex flex-col items-center">
                     <span className="text-[10px] uppercase text-zinc-500 font-semibold tracking-wider mb-0.5">Inicio</span>
@@ -439,7 +453,7 @@ function PCDetailsDrawer({
         }
     });
 
-    const handleStartSession = (type: 'FIXED' | 'BUNDLE', item: any) => {
+    const handleStartSession = (type: 'FIXED' | 'BUNDLE' | 'OPEN', item?: any) => {
         if (!livePc) return;
 
         const activeSession = livePc.sessions?.find((s: any) => s.status === 'ACTIVE' || s.status === 'PAUSED' || s.status === 'EXPIRED');
@@ -450,9 +464,9 @@ function PCDetailsDrawer({
         };
 
         if (type === 'FIXED') {
-            payload.minutes = item.minutes;
+            payload.minutes = item?.minutes;
         } else if (type === 'BUNDLE') {
-            payload.bundleId = item.id;
+            payload.bundleId = item?.id;
         }
 
         if (activeSession) {
@@ -555,7 +569,35 @@ function PCDetailsDrawer({
                                                 <Badge variant="outline" className="ml-auto text-[9px] h-5">Extensión</Badge>
                                             </div>
                                             <div className="grid grid-cols-10 gap-2">
-                                                {isLoadingRates ? (
+                                                {/* OPEN SESSION BUTTON */}
+                                                {!isSessionActive && (
+                                                    <button
+                                                        onClick={() => handleStartSession('OPEN')}
+                                                        className="
+                                                            col-span-2 group relative overflow-hidden h-20
+                                                            flex flex-col items-center justify-center p-3
+                                                            bg-purple-900/30 border border-purple-500/30
+                                                            hover:bg-purple-600 hover:border-purple-400
+                                                            rounded-lg transition-all duration-200
+                                                            hover:shadow-[0_0_15px_-5px_rgba(168,85,247,0.4)]
+                                                            active:scale-[0.96] cursor-pointer
+                                                        "
+                                                    >
+                                                        <div className="mb-1 p-1 bg-purple-500/20 rounded-full group-hover:bg-white/20">
+                                                            <div className="w-5 h-5 text-purple-400 group-hover:text-white flex items-center justify-center font-bold text-lg leading-none">∞</div>
+                                                        </div>
+                                                        <span className="text-[9px] uppercase font-bold text-purple-300 group-hover:text-white text-center leading-tight">
+                                                            Tiempo<br />Libre
+                                                        </span>
+                                                    </button>
+                                                )}
+
+                                                {activeSession?.pricingType === 'OPEN' ? (
+                                                    <div className="col-span-10 py-8 text-center text-green-400/70 border border-dashed border-green-500/20 rounded-xl bg-green-950/10">
+                                                        <Clock className="w-5 h-5 mx-auto mb-2 opacity-50" />
+                                                        <span className="text-[10px] uppercase tracking-wider font-bold">Modo Tiempo Libre Activo</span>
+                                                    </div>
+                                                ) : isLoadingRates ? (
                                                     [1, 2, 3, 4, 5, 6].map(i => (
                                                         <div key={i} className="h-20 bg-zinc-900/50 rounded-lg animate-pulse" />
                                                     ))
@@ -565,7 +607,7 @@ function PCDetailsDrawer({
                                                             key={rate.id}
                                                             onClick={() => handleStartSession('FIXED', rate)}
                                                             className="
-                                                                group relative overflow-hidden h-20
+                                                                col-span-2 group relative overflow-hidden h-20
                                                                 flex flex-col items-center justify-center p-3
                                                                 bg-sky-900/40 border border-zinc-800/60
                                                                 hover:bg-blue-600 hover:border-blue-500 
@@ -601,7 +643,12 @@ function PCDetailsDrawer({
                                                 <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">Paquetes y Promociones</h3>
                                             </div>
                                             <div className="grid grid-cols-8 gap-2">
-                                                {isLoadingBundles ? (
+                                                {activeSession?.pricingType === 'OPEN' ? (
+                                                    <div className="col-span-12 py-8 text-center text-zinc-700/50 border border-dashed border-zinc-800/50 rounded-xl">
+                                                        <Tag className="w-5 h-5 mx-auto mb-2 opacity-30" />
+                                                        <span className="text-[10px] uppercase tracking-wider font-semibold">Paquetes no disponibles</span>
+                                                    </div>
+                                                ) : isLoadingBundles ? (
                                                     [1, 2, 3, 4, 5, 6].map(i => (
                                                         <div key={i} className="h-24 bg-zinc-900/50 rounded-lg animate-pulse" />
                                                     ))
@@ -668,8 +715,9 @@ function PCDetailsDrawer({
                                         {isSessionActive ? (
                                             <ActiveSessionCard
                                                 session={activeSession}
+                                                rates={rates}
                                                 onEnd={() => {
-                                                    const promise = sessionsApi.end(activeSession.id, 'CASH');
+                                                    const promise = sessionsApi.end(activeSession.id, paymentMethod);
                                                     toast.promise(promise, {
                                                         loading: 'Finalizando...',
                                                         success: () => {
