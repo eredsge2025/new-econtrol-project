@@ -33,10 +33,10 @@ export class PcsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return 'pong';
     }
 
-    @SubscribeMessage('join_lan')
-    handleJoinLan(client: Socket, lanId: string) {
-        client.join(lanId);
-        this.logger.log(`Client ${client.id} joined LAN room: ${lanId}`);
+    @SubscribeMessage('join_user')
+    handleJoinUser(client: Socket, userId: string) {
+        client.join(`user-${userId}`);
+        this.logger.log(`Client ${client.id} joined User room: user-${userId}`);
     }
 
     // Method to emit status updates to all connected clients
@@ -44,5 +44,11 @@ export class PcsGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // Emitir el objeto PC completo (incluyendo activeUser) a la sala del LAN Center
         this.server.to(lanId).emit('pc_status_update', pc);
         this.logger.log(`Emitted real-time update for PC ${pc.id} (${pc.name}) to room ${lanId}`);
+    }
+
+    // Explicitly emit balance update to the user room
+    emitBalanceUpdate(userId: string, newBalance: number) {
+        this.server.to(`user-${userId}`).emit('balance_updated', { userId, balance: newBalance });
+        this.logger.log(`Emitted real-time balance update for User ${userId}: S/ ${newBalance}`);
     }
 }

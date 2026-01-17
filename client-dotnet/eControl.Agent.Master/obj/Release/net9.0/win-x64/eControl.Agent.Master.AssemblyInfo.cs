@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("agent-master")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7ae11a40d8705732fe4fcdc4fcd22bb6d7949616")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fcd723be5d995d37299f2141d50be4bea5113892")]
 [assembly: System.Reflection.AssemblyProductAttribute("agent-master")]
 [assembly: System.Reflection.AssemblyTitleAttribute("agent-master")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -253,6 +253,13 @@ export class UsersService {
             }
         }
 
+        // 4. Always emit explicit balance update to the user's specific room
+        try {
+            this.pcsGateway.emitBalanceUpdate(id, Number(updatedUser.balance));
+        } catch (error) {
+            console.error(`Error emitting direct balance update for user ${id}:`, error);
+        }
+
         return new UserEntity(updatedUser);
     }
 
